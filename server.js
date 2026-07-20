@@ -74,6 +74,7 @@ app.use('/uploads', express.static(uploadsDir));
 // Serve SPA frontend static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/owner', (req, res) => res.sendFile(path.join(__dirname, 'public', 'owner.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // Mock Email Notification Helper
 function sendMockEmail(userId, message) {

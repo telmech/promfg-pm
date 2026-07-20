@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project & Task Management • Powered by PRO-MFG</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-theme">
+
+  <!-- ==================== LOGIN & SIGNUP VIEW ==================== -->
+  <div id="login-container" class="login-container">
+    
+    <!-- 1. Log In Card -->
+    <div id="login-card" class="login-card">
+      <div class="login-header">
+        <div class="logo">
+          <div class="dynamic-logo-login-container" style="margin-bottom:8px; max-height:80px; max-width:80px; width:80px; height:80px; display:inline-block; vertical-align: middle;">
+            <img src="/uploads/logo.jpg" alt="PRO-MFG Logo" style="max-height:100%; max-width:100%; object-fit:contain;">
+          </div>
+          <span class="dynamic-name-login-text" style="display:block; font-size:1.6rem; font-weight:700;">PRO-MFG</span>
+        </div>
+        <h1 class="branding-header-title" style="font-family:'Outfit',sans-serif; font-size:1.2rem; margin-top:8px;">Project & Task Management</h1>
+        <p style="font-weight: 500; color: var(--primary-color);">Powered by PRO-MFG</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-email">Email Address</label>
+          <input type="email" id="login-email" required placeholder="name@company.com">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••">
+        </div>
+        <div id="login-error" class="error-message hidden">Invalid email or password.</div>
+        <button type="submit" class="btn btn-primary btn-block">Log In</button>
+        <p style="text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--text-secondary);">
+          Don't have an account? <a href="#" id="link-go-signup" class="btn-text" style="padding: 0;">Sign Up</a>
+        </p>
+      </form>
+    </div>
+
+    <!-- 2. Sign Up Card -->
+    <div id="signup-card" class="login-card hidden">
+      <div class="login-header">
+        <div class="logo">
+          <div class="company-logo-login-container" style="margin-bottom:8px; max-height:80px; max-width:80px; width:80px; height:80px; display:inline-block; vertical-align: middle;">
+            <img src="/uploads/logo.jpg" alt="PRO-MFG Logo" style="max-height:100%; max-width:100%; object-fit:contain;">
+          </div>
+          <span class="company-name-login-text" style="display:block; font-size:1.6rem; font-weight:700;">PRO-MFG</span>
+        </div>
+        <h1 class="branding-header-title" style="font-family:'Outfit',sans-serif; font-size:1.2rem; margin-top:8px;">Project & Task Management</h1>
+        <p style="font-weight: 500; color: var(--primary-color);">Powered by PRO-MFG</p>
+      </div>
+      <form id="signup-form">
+        <div class="form-group">
+          <label for="signup-name">Full Name *</label>
+          <input type="text" id="signup-name" required placeholder="Alice Johnson">
+        </div>
+        <div class="form-group">
+          <label for="signup-email">Office Email Address *</label>
+          <input type="email" id="signup-email" required placeholder="name@org.com">
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password *</label>
+          <input type="password" id="signup-password" required placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label for="signup-dept">Department *</label>
+          <select id="signup-dept" required>
+            <!-- Loaded dynamically -->
+          </select>
+        </div>
+        <div id="signup-error" class="error-message hidden">Error signing up.</div>
+        <button type="submit" class="btn btn-primary btn-block">Send Verification OTP</button>
+        <p style="text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--text-secondary);">
+          Already have an account? <a href="#" id="link-go-login" class="btn-text" style="padding: 0;">Log In</a>
+        </p>
+      </form>
+    </div>
+
+    <!-- 3. OTP Verification Card -->
+    <div id="otp-card" class="login-card hidden">
+      <div class="login-header">
+        <div class="logo">
+          <div class="company-logo-login-container" style="margin-bottom:8px; max-height:80px; max-width:80px; width:80px; height:80px; display:inline-block; vertical-align: middle;">
+            <img src="/uploads/logo.jpg" alt="PRO-MFG Logo" style="max-height:100%; max-width:100%; object-fit:contain;">
+          </div>
+          <span class="company-name-login-text" style="display:block; font-size:1.6rem; font-weight:700;">PRO-MFG</span>
+        </div>
+        <h1 class="branding-header-title" style="font-family:'Outfit',sans-serif; font-size:1.2rem; margin-top:8px;">Project & Task Management</h1>
+        <p style="font-weight: 500; color: var(--primary-color);">Powered by PRO-MFG</p>
+      </div>
+      <form id="otp-form">
+        <div class="form-group">
+          <label for="otp-email-display">Verifying Email</label>
+          <input type="email" id="otp-email-display" readonly style="background-color: var(--border-color); opacity: 0.8;">
+        </div>
+        <div class="form-group">
+          <label for="otp-code">6-Digit Verification Code</label>
+          <input type="text" id="otp-code" required placeholder="e.g. 123456" pattern="[0-9]{6}" maxlength="6" style="text-align: center; font-size: 1.4rem; letter-spacing: 4px; font-weight: 700;">
+        </div>
+        <div id="otp-error" class="error-message hidden">Invalid or expired OTP.</div>
+        <button type="submit" class="btn btn-primary btn-block">Verify & Log In</button>
+        <p style="text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--text-secondary);">
+          Didn't receive it? <a href="#" id="link-restart-signup" class="btn-text" style="padding: 0;">Try Again</a>
+        </p>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- ==================== MAIN APPLICATION VIEW ==================== -->
+  <div id="app-container" class="app-container hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div id="company-logo-sidebar-container" style="display:block; max-height:90px; max-width:100%; width:100%;">
+            <svg id="default-sidebar-logo-svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <span id="company-name-sidebar-text">PRO-MFG</span>
+        </div>
+      </div>
+      
+
+      
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="#portal" class="nav-link active" data-target="view-portal">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+              <span>Home Portal</span>
+            </a>
+          </li>
+          <li class="project-access-only">
+            <a href="#dashboard" class="nav-link" data-target="view-dashboard">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="project-access-only">
+            <a href="#projects" class="nav-link" data-target="view-projects">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              <span>Projects</span>
+            </a>
+          </li>
+          <li class="project-access-only">
+            <a href="#tasks" class="nav-link" data-target="view-tasks">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+              <span>Task Board</span>
+            </a>
+          </li>
+          <li class="admin-pm-only">
+            <a href="#team" class="nav-link" data-target="view-team">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span>Team Settings</span>
+            </a>
+          </li>
+          <li class="admin-pm-only">
+            <a href="#reports" class="nav-link" data-target="view-reports">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+              <span>Reports</span>
+            </a>
+          </li>
+          <li class="rfq-access-only">
+            <a href="#rfq" class="nav-link" data-target="view-rfq">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+              <span>RFQ Tracking</span>
+            </a>
+          </li>
+          <li class="purchasing-admin-only hidden">
+            <a href="#bom" class="nav-link" data-target="view-bom">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2 2H11a2 2 0 0 1 2 2v1"></path><path d="M18 8h6v8h-6z"></path><circle cx="6" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+              <span>BOM Tracking</span>
+            </a>
+          </li>
+          <li class="pr-access-only">
+            <a href="#pr" class="nav-link" data-target="view-pr">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+              <span>PR Tracking</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer" style="display:flex; flex-direction:column; gap:12px;">
+        <div id="trial-sidebar-banner" style="display:none; cursor:pointer; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-size:0.7rem; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:0.5px;">14-Day Free Trial</span>
+            <span id="trial-days-badge" style="background:#0284c7; color:white; font-size:0.6rem; padding:1px 5px; border-radius:100px; font-weight:700;">14 days left</span>
+          </div>
+          <div style="font-size:0.7rem; color:#94a3b8; font-weight:500;">Click to view plans & upgrade</div>
+        </div>
+        <div class="powered-by-promfg" style="display:flex; flex-direction:column; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:12px; margin-bottom:4px; text-align:center;">
+          <div style="font-size:0.65rem; text-transform:uppercase; letter-spacing:1.2px; color:var(--sidebar-text-muted); margin-bottom:6px; font-weight:700;">Powered By</div>
+          <img src="/uploads/logo.jpg" alt="PRO-MFG" style="max-height:110px; max-width:140px; width:100%; height:auto; object-fit:contain; padding: 4px;">
+        </div>
+        <div class="user-profile-badge">
+          <div class="avatar" id="user-avatar-initials">SA</div>
+          <div class="user-details">
+            <div class="user-name" id="user-display-name">System Admin</div>
+            <div class="user-role" id="user-display-role">Admin</div>
+          </div>
+          
+            <button id="btn-billing" title="Subscription & Billing" class="btn-icon" style="margin-bottom:2px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            </button>
+            <button id="btn-policies" title="View Policies" class="btn-icon" style="margin-bottom:2px;" onclick="document.getElementById('modal-policies').classList.add('active')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            </button>
+            <button id="btn-logout" title="Log Out" class="btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="app-header">
+        <div style="display:flex; flex-direction:column;">
+          <h1 id="view-title" style="margin-bottom:2px;">Dashboard</h1>
+          <span style="font-size:0.75rem; font-weight:600; color:var(--primary-color);">Project &amp; Task Management • Powered by PRO-MFG</span>
+        </div>
+        
+        <div class="header-actions">
+          <!-- Logged In User Info -->
+          <div id="header-user-info" style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-right:12px; display:flex; align-items:center; gap:6px; border-right:1px solid var(--border-color); padding-right:12px;">
+            <span style="opacity:0.75;">Logged in:</span>
+            <span id="header-user-display" style="color:var(--primary-color);">Guest</span>
+          </div>
+
+          <!-- Theme Toggle -->
+          <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+            <svg id="theme-icon-dark" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            <svg id="theme-icon-light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          </button>
+
+          <!-- Notifications Bell -->
+          <div class="notification-dropdown-container">
+            <button id="btn-notifications" class="btn-icon" title="Notifications">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span id="notification-badge" class="badge hidden">0</span>
+            </button>
+            <div id="notification-dropdown" class="notification-dropdown hidden">
+              <div class="dropdown-header">
+                <h3>Notifications</h3>
+                <button id="btn-clear-notifications" class="btn btn-text">Clear All</button>
+              </div>
+              <div id="notification-list" class="notification-list">
+                <!-- Notifications populated dynamically -->
+                <div class="no-notifications">No new notifications</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Viewports -->
+      <div class="viewport-container">
+        
+        <!-- 0. HOME PORTAL VIEW -->
+        <section id="view-portal" class="viewport-section">
+          <div class="portal-header" style="margin-bottom:32px; text-align:center; padding: 20px 0;">
+            <h1 style="font-family:'Outfit',sans-serif; font-size:2.2rem; font-weight:700; color:var(--text-primary); margin-bottom:8px; letter-spacing:-0.5px;">Welcome to <span class="company-name-portal-text" style="color:var(--primary-color);">PRO-MFG</span> Portal</h1>
+          </div>
+
+          <div class="portal-grid">
+            <!-- Active Modules -->
+            <div class="portal-card" id="portal-card-projects" style="cursor:pointer;">
+              <div class="portal-card-icon projects-icon-bg" style="background:linear-gradient(135deg, #3b82f6, #1d4ed8); color:white; width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              </div>
+              <h3 class="portal-card-title" style="font-size:1.25rem; font-weight:700; margin-bottom:8px;">Project & Task Hub</h3>
+              <p class="portal-card-desc" style="font-size:0.875rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px; flex-grow:1;">Track project lifelines, operator workloads, Gantt schedules, milestone pipelines, and assign tasks to operator roles.</p>
+              <button class="portal-card-btn" style="background:var(--primary-color); color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; width:100%; text-align:center; transition:0.2s;">Enter Workspace &rarr;</button>
+            </div>
+
+            <div class="portal-card" id="portal-card-bom" style="cursor:pointer;">
+              <div class="portal-card-icon bom-icon-bg" style="background:linear-gradient(135deg, #10b981, #047857); color:white; width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"></path><path d="M18 8h6v8h-6z"></path><circle cx="6" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+              </div>
+              <h3 class="portal-card-title" style="font-size:1.25rem; font-weight:700; margin-bottom:8px;">BOM Tracker <span id="portal-bom-lock-icon" style="font-size:0.95rem; margin-left:4px; vertical-align:middle; display:none;">🔒</span></h3>
+              <p class="portal-card-desc" style="font-size:0.875rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px; flex-grow:1;">Manage parts list, upload SolidWorks bills, request supplier quotes, evaluate quotation comparisons, and release orders.</p>
+              <button class="portal-card-btn" id="portal-bom-btn" style="background:var(--primary-color); color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; width:100%; text-align:center; transition:0.2s;">Enter Workspace &rarr;</button>
+            </div>
+
+            <div class="portal-card" id="portal-card-rfq" style="cursor:pointer;">
+              <div class="portal-card-icon rfq-icon-bg" style="background:linear-gradient(135deg, #8b5cf6, #5b21b6); color:white; width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+              </div>
+              <h3 class="portal-card-title" style="font-size:1.25rem; font-weight:700; margin-bottom:8px;">RFQ Tracking <span id="portal-rfq-lock-icon" style="font-size:0.95rem; margin-left:4px; vertical-align:middle; display:none;">🔒</span></h3>
+              <p class="portal-card-desc" style="font-size:0.875rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px; flex-grow:1;">Track incoming customer RFQs, costing, proposal submissions, conversion funnel metrics, and win-rate analysis.</p>
+              <button class="portal-card-btn" id="portal-rfq-btn" style="background:var(--primary-color); color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; width:100%; text-align:center; transition:0.2s;">Enter Workspace &rarr;</button>
+            </div>
+
+            <div class="portal-card" id="portal-card-pr" style="cursor:pointer;">
+              <div class="portal-card-icon pr-icon-bg" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:white; width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+              </div>
+              <h3 class="portal-card-title" style="font-size:1.25rem; font-weight:700; margin-bottom:8px;">PR Tracking <span id="portal-pr-lock-icon" style="font-size:0.95rem; margin-left:4px; vertical-align:middle; display:none;">🔒</span></h3>
+              <p class="portal-card-desc" style="font-size:0.875rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px; flex-grow:1;">Raise purchase requisitions, manage multi-level approvals (Ops Head / MD), and dispatch orders to procurement.</p>
+              <button class="portal-card-btn" id="portal-pr-btn" style="background:var(--primary-color); color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; width:100%; text-align:center; transition:0.2s;">Enter Workspace &rarr;</button>
+            </div>
+
+            <!-- Upcoming Modules -->
+            <div class="portal-card locked" style="position:relative; opacity:0.7;">
+              <span class="locked-badge" style="position:absolute; top:12px; right:12px; background:var(--border-color); color:var(--text-secondary); font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px;">Coming Soon</span>
+              <div class="portal-card-icon locked-icon-bg" style="background:#475569; color:white; width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
+              </div>
+              <h3 class="portal-card-title" style="font-size:1.25rem; font-weight:700; margin-bottom:8px; color:var(--text-secondary);">Stock & Inventory</h3>
+              <p class="portal-card-desc" style="font-size:0.875rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px; flex-grow:1;">Real-time stock alerts, inventory valuation, stores inward receipts, and raw material tracking with low stock reminders.</p>
+              <button class="portal-card-btn" disabled style="background:#cbd5e1; color:#94a3b8; border:none; padding:8px 16px; border-radius:6px; font-weight:600; width:100%; text-align:center; cursor:not-allowed;">Locked 🔒</button>
+            </div>
+
+            <div class="portal-card locked" style="position:relative; opacity:0.7;">
+              <span class="locked-badge" style="position:absolute; top:12px; right:12px; background:var(--border-color); color:var(--text-secondary); font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px;">Coming Soon</span>
+              <div class="portal-card-icon locked-icon-bg" style="background:#475569; color:white; width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+              <h3 class="portal-card-title" style="font-size:1.25rem; font-weight:700; margin-bottom:8px; color:var(--text-secondary);">Quality Control (QA)</h3>
+              <p class="portal-card-desc" style="font-size:0.875rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px; flex-grow:1;">Shop quality logging, VMC dimensional inspection reports, non-conformance reports (NCR), and gauge calibrations.</p>
+              <button class="portal-card-btn" disabled style="background:#cbd5e1; color:#94a3b8; border:none; padding:8px 16px; border-radius:6px; font-weight:600; width:100%; text-align:center; cursor:not-allowed;">Locked 🔒</button>
+            </div>
+
+            <div class="portal-card locked" style="position:relative; opacity:0.7;">
+              <span class="locked-badge" style="position:absolute; top:12px; right:12px; background:var(--border-color); color:var(--text-secondary); font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px;">Coming Soon</span>
+              <div class="portal-card-icon locked-icon-bg" style="background:#475569; color:white; width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+              <h3 class="portal-card-title" style="font-size:1.25rem; font-weight:700; margin-bottom:8px; color:var(--text-secondary);">Shop floor Dispatch</h3>
+              <p class="portal-card-desc" style="font-size:0.875rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px; flex-grow:1;">Machine utilization monitoring, job card release, hourly production count, and VMC/CNC operator productivity tracking.</p>
+              <button class="portal-card-btn" disabled style="background:#cbd5e1; color:#94a3b8; border:none; padding:8px 16px; border-radius:6px; font-weight:600; width:100%; text-align:center; cursor:not-allowed;">Locked 🔒</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 1. DASHBOARD VIEW -->
+        <section id="view-dashboard" class="viewport-section">
+          <!-- Overdue Alert Banner Container -->
+          <div id="dashboard-alert-banner" class="alert-banner hidden">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12" y2="16.01"></line></svg>
+            <span id="alert-banner-text">Attention: You have overdue tasks!</span>
+          </div>
+
+          <!-- Cards Summary -->
+          <div class="metrics-grid">
+            <div class="metric-card metric-card-link" id="dash-card-projects" title="Go to Projects" onclick="navigateToDashboardCard('projects')">
+              <div class="card-icon projects-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              </div>
+              <div class="card-data">
+                <h3 id="stat-total-projects">0</h3>
+                <p>Total Projects</p>
+              </div>
+              <span class="card-arrow">&#8250;</span>
+            </div>
+            <div class="metric-card metric-card-link" id="dash-card-todo" title="View To Do tasks" onclick="navigateToDashboardCard('tasks','todo')">
+              <div class="card-icon tasks-todo-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+              <div class="card-data">
+                <h3 id="stat-todo-tasks">0</h3>
+                <p>Tasks To Do</p>
+              </div>
+              <span class="card-arrow">&#8250;</span>
+            </div>
+            <div class="metric-card metric-card-link" id="dash-card-inprogress" title="View In Progress tasks" onclick="navigateToDashboardCard('tasks','inprogress')">
+              <div class="card-icon tasks-progress-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+              </div>
+              <div class="card-data">
+                <h3 id="stat-inprogress-tasks">0</h3>
+                <p>Tasks In Progress</p>
+              </div>
+              <span class="card-arrow">&#8250;</span>
+            </div>
+            <div class="metric-card metric-card-link" id="dash-card-done" title="View Completed tasks" onclick="navigateToDashboardCard('tasks','done')">
+              <div class="card-icon tasks-done-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+              <div class="card-data">
+                <h3 id="stat-completed-tasks">0</h3>
+                <p>Completed Tasks</p>
+              </div>
+              <span class="card-arrow">&#8250;</span>
+            </div>
+          </div>
+
+          <!-- Mid section: Workload & Urgent Tasks -->
+          <div class="dashboard-details-grid">
+            <div class="detail-panel">
+              <div class="panel-header">
+                <h2>My Tasks (Due Soon)</h2>
+              </div>
+              <div class="panel-body">
+                <div id="my-urgent-tasks-list" class="task-list-mini">
+                  <!-- Dynamic content -->
+                  <div class="empty-state">No upcoming tasks assigned. Good job!</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-panel">
+              <div class="panel-header">
+                <h2>Team Workload (Open Tasks)</h2>
+              </div>
+              <div class="panel-body flex-center">
+                <div id="workload-chart-container" class="chart-container">
+                  <!-- Custom CSS workload list/charts dynamically loaded -->
+                  <div class="empty-state">No workload data available.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. PROJECTS VIEW -->
+        <section id="view-projects" class="viewport-section hidden">
+          <div class="view-header-row">
+            <div class="search-filters">
+              <input type="text" id="project-search-input" placeholder="Search projects...">
+            </div>
+            <button id="btn-create-project" class="btn btn-primary admin-pm-only">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Create Project
+            </button>
+          </div>
+
+          <div id="projects-grid" class="projects-grid">
+            <!-- Populated dynamically -->
+            <div class="empty-state">No projects found.</div>
+          </div>
+        </section>
+
+        <!-- 3. TASKS & TIMELINE VIEW -->
+        <section id="view-tasks" class="viewport-section hidden">
+          <div class="view-header-row">
+            <div class="board-filters">
+              <div class="form-group-inline">
+                <label for="board-project-filter">Project:</label>
+                <select id="board-project-filter">
+                  <option value="all">All Shared Projects</option>
+                  <!-- Populate options -->
+                </select>
+              </div>
+              <div class="form-group-inline">
+                <label for="board-assignee-filter">Member:</label>
+                <select id="board-assignee-filter" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 0.85rem; outline: none;">
+                  <option value="all">All Members</option>
+                </select>
+              </div>
+              <div class="form-group-inline">
+                <label for="board-priority-filter">Priority:</label>
+                <select id="board-priority-filter" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 0.85rem; outline: none;">
+                  <option value="all">All Priorities</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div class="form-group-inline" id="board-view-type-wrapper">
+                <label for="board-view-type">View:</label>
+                <select id="board-view-type">
+                  <option value="board">Kanban Board</option>
+                  <option value="list">List View</option>
+                </select>
+              </div>
+            </div>
+            <button id="btn-create-task" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              New Task
+            </button>
+          </div>
+
+          <!-- Project Detail Sub Navigation Tabs (Visible when a project is selected) -->
+          <div id="project-tabs-container" class="project-tabs-row hidden">
+            <button class="project-tab active" data-tab="board">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              Task Board
+            </button>
+            <button class="project-tab" data-tab="timeline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              Project Timeline Plan
+            </button>
+            <button class="project-tab" data-tab="task-timeline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+              Task Timeline & Overlaps
+            </button>
+          </div>
+
+          <!-- KANBAN VIEW CONTAINER -->
+          <div id="tasks-kanban-view" class="kanban-board project-tab-content">
+            <!-- TO DO column -->
+            <div class="kanban-column" id="col-todo" data-status="todo">
+              <div class="column-header">
+                <h3>To Do</h3>
+                <span class="task-count badge" id="count-todo">0</span>
+              </div>
+              <div class="column-cards" id="cards-todo">
+                <!-- cards loaded here -->
+              </div>
+            </div>
+
+            <!-- IN PROGRESS column -->
+            <div class="kanban-column" id="col-inprogress" data-status="inprogress">
+              <div class="column-header">
+                <h3>In Progress</h3>
+                <span class="task-count badge" id="count-inprogress">0</span>
+              </div>
+              <div class="column-cards" id="cards-inprogress">
+                <!-- cards loaded here -->
+              </div>
+            </div>
+
+            <!-- DONE column -->
+            <div class="kanban-column" id="col-done" data-status="done">
+              <div class="column-header">
+                <h3>Done</h3>
+                <span class="task-count badge" id="count-done">0</span>
+              </div>
+              <div class="column-cards" id="cards-done">
+                <!-- cards loaded here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- LIST VIEW CONTAINER -->
+          <div id="tasks-list-view" class="list-view-container hidden project-tab-content">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Task Title</th>
+                  <th>Project</th>
+                  <th>Assignee</th>
+                  <th>Priority</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="list-tasks-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- PROJECT TIMELINE / GANTT VIEW CONTAINER -->
+          <div id="project-timeline-view" class="project-timeline-view-container hidden project-tab-content">
+            <div class="timeline-header-actions">
+              <div>
+                <h3>Project Timeline & Milestones Plan</h3>
+                <p class="helper-text">PM or Admin can add new milestones, set dates and update planned vs actual completion percentages.</p>
+              </div>
+              <div class="timeline-action-buttons">
+                <!-- SPREADSHEET & PDF EXPORT BUTTONS -->
+                <button id="btn-export-excel" class="btn btn-secondary" style="font-weight: 600;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  Export Excel
+                </button>
+                <button id="btn-export-pdf" class="btn btn-secondary" style="font-weight: 600;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 22H0V16H24V22ZM20 2H4A2 2 0 0 0 2 4V12H22V4A2 2 0 0 0 20 2Z"></path><circle cx="6" cy="18" r="1.5"></circle><circle cx="10" cy="18" r="1.5"></circle></svg>
+                  Export PDF
+                </button>
+                
+                <button id="btn-add-milestone" class="btn btn-secondary admin-pm-only">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  Add Milestone
+                </button>
+                <button id="btn-save-timeline" class="btn btn-primary admin-pm-only">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  Save Timeline Changes
+                </button>
+              </div>
+            </div>
+
+            <!-- LIVE TIMELINE METRICS DASHBOARD -->
+            <div id="project-timeline-dashboard-metrics" class="timeline-summary-grid">
+              <!-- Loaded dynamically via JS -->
+            </div>
+
+            <div class="timeline-editor-wrapper">
+              <table class="data-table timeline-editor-table">
+                <thead>
+                  <tr>
+                    <th>Stage / Milestone Name</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Duration (Days)</th>
+                    <th>Actual Progress (%)</th>
+                    <th class="admin-pm-only" style="width: 80px;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="timeline-stages-editor-body">
+                  <!-- Generated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- VISUAL GANTT CHART -->
+            <div class="gantt-chart-section">
+              <h3>Planned Timeline vs. Actual Progress (Gantt Chart)</h3>
+              <div id="gantt-chart-container" class="gantt-chart-container">
+                <!-- Rendered dynamically via JS -->
+                <div class="empty-state">No timeline dates set to generate Gantt plan.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. TEAM VIEW (Super Admin / Admin / PM Access) -->
+        <section id="view-team" class="viewport-section hidden admin-pm-only">
+          <div class="view-header-row">
+            <h2>User Management (<span id="active-user-counter">0</span>/500 Active)</h2>
+            <button id="btn-create-user" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add User
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Plan & Payment</th>
+                  <th>Status</th>
+                  <th>Created At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="team-table-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SUPER ADMIN DEPARTMENTS MANAGER PANEL -->
+          <div class="super-admin-only hidden" id="department-management-section" style="margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+            <h3>Manage Departments</h3>
+            <p class="helper-text">Add or delete departments available for team members registration.</p>
+            <div style="display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap;">
+              <div class="table-container" style="flex: 1.5; min-width: 300px;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Department Name</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="departments-list-body">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="detail-panel" style="flex: 1; min-width: 250px; padding: 20px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-primary);">
+                <h4 style="margin-bottom: 12px;">Add New Department</h4>
+                <form id="department-add-form">
+                  <div class="form-group">
+                    <label for="new-dept-name">Department Name</label>
+                    <input type="text" id="new-dept-name" required placeholder="e.g. Sales">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">Add Department</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUPER ADMIN BRANDING MANAGER PANEL -->
+          <div class="super-admin-only hidden" id="branding-management-section" style="margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+            <h3>Company Branding Settings</h3>
+            <p class="helper-text">Configure global company name and upload your logo (appears on sidebar, login and exports).</p>
+            <div style="display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap;">
+              <div class="detail-panel" style="flex: 1.5; min-width: 300px; padding: 20px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-primary);">
+                <form id="branding-settings-form">
+                  <div class="form-group">
+                    <label for="company-name-input">Company Name</label>
+                    <input type="text" id="company-name-input" required placeholder="e.g. PRO-MFG">
+                  </div>
+                  <button type="submit" class="btn btn-primary">Save Company Name</button>
+                </form>
+              </div>
+              <div class="detail-panel" style="flex: 1; min-width: 250px; padding: 20px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-primary);">
+                <h4 style="margin-bottom:12px;">Upload Company Logo</h4>
+                <form id="branding-logo-form">
+                  <div class="form-group">
+                    <input type="file" id="company-logo-file-input" required accept="image/*">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">Upload Logo</button>
+                </form>
+                <div id="company-logo-preview" style="margin-top: 16px; height: 80px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); overflow:hidden;">
+                  <span style="font-size:0.75rem; color:var(--text-secondary);">No custom logo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PR TRACKING VIEW -->
+        <section id="view-pr" class="viewport-section hidden">
+          <div class="view-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="margin:0 0 4px 0;">PR Tracking</h2>
+              <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">Manage Purchase Requisitions, multi-level approvals, and procurement dispatches</p>
+            </div>
+            <button id="btn-create-pr" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Raise Requisition
+            </button>
+          </div>
+
+          <!-- PR Stats Summary Cards -->
+          <div class="rfq-summary-grid" style="margin-bottom:20px;">
+            <div class="rfq-stat-card rfq-open">
+              <div class="rfq-stat-val" id="pr-stat-total">0</div>
+              <div class="rfq-stat-label">Total PRs</div>
+            </div>
+            <div class="rfq-stat-card rfq-due">
+              <div class="rfq-stat-val" id="pr-stat-ops">0</div>
+              <div class="rfq-stat-label">Pending Ops Head</div>
+            </div>
+            <div class="rfq-stat-card rfq-submitted">
+              <div class="rfq-stat-val" id="pr-stat-md">0</div>
+              <div class="rfq-stat-label">Pending MD</div>
+            </div>
+            <div class="rfq-stat-card rfq-won">
+              <div class="rfq-stat-val" id="pr-stat-approved">0</div>
+              <div class="rfq-stat-label">Fully Approved</div>
+            </div>
+            <div class="rfq-stat-card rfq-lost">
+              <div class="rfq-stat-val" id="pr-stat-rejected">0</div>
+              <div class="rfq-stat-label">Rejected</div>
+            </div>
+            <div class="rfq-stat-card" style="border-top-color:#10b981;">
+              <div class="rfq-stat-val" id="pr-stat-completed">0</div>
+              <div class="rfq-stat-label">Ordered</div>
+            </div>
+          </div>
+
+          <!-- Filters & Actions -->
+          <div class="rfq-filter-bar" style="margin-bottom:20px; display:flex; gap:16px; align-items:flex-end;">
+            <div class="form-group" style="margin:0; min-width:200px;">
+              <label for="pr-project-filter" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Filter by Project</label>
+              <select id="pr-project-filter" class="rfq-filter-select" style="width:100%;">
+                <option value="">All Projects</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0; min-width:160px;">
+              <label for="pr-status-filter" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Status</label>
+              <select id="pr-status-filter" class="rfq-filter-select" style="width:100%;">
+                <option value="">All PRs</option>
+                <option value="pending_ops">Pending Ops Head</option>
+                <option value="pending_md">Pending MD</option>
+                <option value="approved">Approved & Dispatch</option>
+                <option value="rejected">Rejected</option>
+                <option value="completed">Ordered (Completed)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- PR List Table -->
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>PR Code</th>
+                  <th>Project Name</th>
+                  <th>Raised By</th>
+                  <th>Items Count</th>
+                  <th>Est. Cost</th>
+                  <th>Status</th>
+                  <th>Created At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pr-table-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- BOM TRACKING VIEW -->
+        <section id="view-bom" class="viewport-section hidden">
+          <div class="view-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="margin:0 0 4px 0;">BOM Tracking</h2>
+              <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">Track Bill of Materials, procurement lead times, and delivery status</p>
+            </div>
+          </div>
+
+          <!-- Project Selector & Stats Grid -->
+          <div class="rfq-filter-bar" style="margin-bottom:20px; display:flex; gap:16px; align-items:flex-end;">
+            <div class="form-group" style="margin:0; min-width:200px;">
+              <label for="bom-project-select" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Active Project *</label>
+              <select id="bom-project-select" class="rfq-filter-select" style="width:100%;">
+                <option value="">Select Project...</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0; min-width:140px;">
+              <label for="bom-filter-category" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Category</label>
+              <select id="bom-filter-category" class="rfq-filter-select" style="width:100%;">
+                <option value="">All Categories</option>
+                <option>Raw Material</option>
+                <option>Bought-Out-Part (BOP)</option>
+                <option>Electrical</option>
+                <option>Pneumatic</option>
+                <option>Fasteners</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0; min-width:140px;">
+              <label for="bom-filter-status" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Status</label>
+              <select id="bom-filter-status" class="rfq-filter-select" style="width:100%;">
+                <option value="">All Statuses</option>
+                <option>Draft</option>
+                <option>Awaiting Approval</option>
+                <option>Approved</option>
+                <option>Enquiry Sent</option>
+                <option>PO Placed</option>
+                <option>Received</option>
+                <option>Issued</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Summary Metric Cards -->
+          <div class="rfq-summary-grid" style="margin-bottom:24px; display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:16px;">
+            <div class="rfq-stat-card"><div class="rfq-stat-val" id="bom-stat-total">0</div><div class="rfq-stat-label">Total Parts</div></div>
+            <div class="rfq-stat-card rfq-open"><div class="rfq-stat-val" id="bom-stat-ordered">0</div><div class="rfq-stat-label">Parts Ordered</div></div>
+            <div class="rfq-stat-card rfq-won"><div class="rfq-stat-val" id="bom-stat-received">0</div><div class="rfq-stat-label">Parts In Stock</div></div>
+            <div class="rfq-stat-card rfq-submitted"><div class="rfq-stat-val" id="bom-stat-completion">0%</div><div class="rfq-stat-label">Received Progress</div></div>
+            <div class="rfq-stat-card rfq-due"><div class="rfq-stat-val" id="bom-stat-cost">₹0</div><div class="rfq-stat-label">Total Est. Cost</div></div>
+          </div>
+
+          <!-- Actions Bar -->
+          <div class="rfq-filter-bar" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <button id="btn-add-bom-item" class="btn btn-primary">+ Add Item</button>
+              <button id="btn-export-bom" class="btn btn-secondary">Export Excel</button>
+              <button id="btn-download-bom-template" class="btn btn-secondary" style="background:#0f172a; color:#ffffff; border:1px solid #334155; font-weight:600;">📥 Download Sample Format</button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; background:var(--card-bg); border:1px dashed var(--border-color); padding:6px 12px; border-radius:var(--radius-sm);">
+              <span style="font-size:0.75rem; font-weight:600; color:var(--text-secondary);">Bulk Import (Excel/CSV):</span>
+              <input type="file" id="bom-csv-file" accept=".csv,.xlsx,.xls" style="font-size:0.75rem; max-width:180px;" title="Required Format: Item Code, Description, Category, Qty, Unit, Target Date, Supplier A Name, Supplier A Price, Supplier A Lead Time, Supplier A Payment, Supplier B Name, Supplier B Price, Supplier B Lead Time, Supplier B Payment, Supplier C Name, Supplier C Price, Supplier C Lead Time, Supplier C Payment, Winner">
+            </div>
+          </div>
+
+          <!-- BOM Items Table -->
+          <div class="rfq-table-wrap">
+            <table class="rfq-table">
+              <thead>
+                <tr>
+                  <th>Item Code</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Qty/Unit</th>
+                  <th>Awarded Supplier</th>
+                  <th>Target Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bom-table-tbody">
+                <tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-secondary);">Select a project above to load BOM items.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-rfq" class="viewport-section hidden">
+          <div class="view-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="margin:0 0 4px 0;">RFQ Tracking</h2>
+              <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">Manage and track all Requests for Quotation</p>
+            </div>
+            <button id="btn-add-rfq" class="btn btn-primary">+ Add New RFQ</button>
+          </div>
+
+          <!-- Dashboard Summary Cards -->
+          <div class="rfq-summary-grid">
+            <div class="rfq-stat-card"><div class="rfq-stat-val" id="rfq-stat-total">0</div><div class="rfq-stat-label">Total RFQs</div></div>
+            <div class="rfq-stat-card rfq-open"><div class="rfq-stat-val" id="rfq-stat-open">0</div><div class="rfq-stat-label">Open RFQs</div></div>
+            <div class="rfq-stat-card rfq-submitted"><div class="rfq-stat-val" id="rfq-stat-submitted">0</div><div class="rfq-stat-label">Submitted</div></div>
+            <div class="rfq-stat-card rfq-won"><div class="rfq-stat-val" id="rfq-stat-won">0</div><div class="rfq-stat-label">Won</div></div>
+            <div class="rfq-stat-card rfq-lost"><div class="rfq-stat-val" id="rfq-stat-lost">0</div><div class="rfq-stat-label">Lost</div></div>
+            <div class="rfq-stat-card rfq-due"><div class="rfq-stat-val" id="rfq-stat-due-week">0</div><div class="rfq-stat-label">Due This Week</div></div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="rfq-charts-row">
+            <div class="report-card" style="flex:1; min-width:260px;">
+              <h3>RFQs by Status</h3>
+              <canvas id="chart-rfq-status" height="200"></canvas>
+            </div>
+            <div class="report-card" style="flex:1; min-width:260px;">
+              <h3>RFQs by Customer</h3>
+              <canvas id="chart-rfq-customer" height="200"></canvas>
+            </div>
+            <div class="report-card" style="flex:1; min-width:260px;">
+              <h3>RFQs by Owner</h3>
+              <canvas id="chart-rfq-owner" height="200"></canvas>
+            </div>
+          </div>
+
+          <!-- Filters & Search -->
+          <div class="rfq-filter-bar">
+            <input type="text" id="rfq-search" placeholder="Search RFQ, Customer, Project..." class="rfq-search-input">
+            <select id="rfq-filter-customer" class="rfq-filter-select">
+              <option value="">All Customers</option>
+            </select>
+            <select id="rfq-filter-status" class="rfq-filter-select">
+              <option value="">All Statuses</option>
+              <option>New</option><option>Under Review</option><option>Engineering</option>
+              <option>Costing</option><option>Waiting for Vendor</option><option>Quote Ready</option>
+              <option>Submitted</option><option>Won</option><option>Lost</option><option>Closed</option>
+            </select>
+            <select id="rfq-filter-priority" class="rfq-filter-select">
+              <option value="">All Priorities</option>
+              <option>Low</option><option>Medium</option><option>High</option>
+            </select>
+            <select id="rfq-sort" class="rfq-filter-select">
+              <option value="dueDate">Sort: Due Date</option>
+              <option value="createdAt">Sort: Created Date</option>
+              <option value="priority">Sort: Priority</option>
+              <option value="status">Sort: Status</option>
+            </select>
+            <button id="btn-rfq-export" class="btn btn-secondary">Export Excel</button>
+          </div>
+
+          <!-- RFQ Table -->
+          <div class="rfq-table-wrap">
+            <table class="rfq-table">
+              <thead>
+                <tr>
+                  <th>RFQ #</th>
+                  <th>Customer</th>
+                  <th>Project</th>
+                  <th>Received</th>
+                  <th>Due Date</th>
+                  <th>Priority</th>
+                  <th>Owner</th>
+                  <th>Status</th>
+                  <th>Progress</th>
+                  <th>Next Action</th>
+                  <th>Remarks</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rfq-tbody">
+                <tr><td colspan="12" style="text-align:center; padding:40px; color:var(--text-secondary);">No RFQs found. Click <strong>+ Add New RFQ</strong> to get started.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 5. REPORTS VIEW (Admin / PM / Super Admin Only) -->
+        <section id="view-reports" class="viewport-section hidden admin-pm-only">
+          <div class="view-header" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 style="margin:0 0 4px 0;">Advanced Performance Reports</h2>
+              <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">Generate analytical reports for RFQ Conversions and Task Tracker Metrics</p>
+            </div>
+          </div>
+
+          <!-- Report Filter Card -->
+          <div class="rfq-filter-bar" style="margin-bottom:24px; display:flex; gap:16px; align-items:flex-end;">
+            <div class="form-group" style="margin:0; min-width:180px;">
+              <label for="report-select-category" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Report Category</label>
+              <select id="report-select-category" class="rfq-filter-select" style="width:100%;">
+                <option value="rfq">RFQ Performance Report</option>
+                <option value="task">Task Tracker Performance</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0; min-width:140px;">
+              <label for="report-select-frequency" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Frequency</label>
+              <select id="report-select-frequency" class="rfq-filter-select" style="width:100%;">
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="midyear">Mid-Year</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0; min-width:120px;" id="wrapper-report-year">
+              <label for="report-select-year" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Year</label>
+              <select id="report-select-year" class="rfq-filter-select" style="width:100%;">
+                <!-- filled dynamically in app.js -->
+              </select>
+            </div>
+            <div class="form-group" style="margin:0; min-width:140px;" id="wrapper-report-period-detail">
+              <label id="lbl-report-period-detail" for="report-select-period-detail" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; color:var(--text-primary);">Month</label>
+              <select id="report-select-period-detail" class="rfq-filter-select" style="width:100%;">
+                <!-- filled dynamically depending on frequency -->
+              </select>
+            </div>
+            <button id="btn-generate-report" class="btn btn-primary" style="height:36px; padding:0 16px; font-weight:600;">Generate Report</button>
+            <button id="btn-export-report-excel" class="btn btn-secondary hidden" style="height:36px; padding:0 16px; font-weight:600;">Export CSV</button>
+            <button id="btn-export-report-pdf" class="btn btn-secondary hidden" style="height:36px; padding:0 16px; font-weight:600;">Export PDF</button>
+          </div>
+
+          <!-- Report Content Container -->
+          <div id="report-results-container" class="hidden">
+            <!-- Summary Metrics Cards -->
+            <div class="rfq-summary-grid" id="report-summary-cards" style="margin-bottom:24px; display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:16px;">
+              <!-- Loaded dynamically -->
+            </div>
+
+            <!-- Charts Row -->
+            <div class="rfq-charts-row" id="report-charts-row" style="margin-bottom:24px; display:flex; gap:20px; flex-wrap:wrap;">
+              <div class="report-card" style="flex:1; min-width:320px; background:var(--card-bg); border:1px solid var(--border-color); padding:20px; border-radius:var(--radius-md);">
+                <h3 id="report-chart-title-1" style="margin-top:0; margin-bottom:16px; font-size:1rem; font-weight:600; color:var(--text-primary);">Status Distribution</h3>
+                <canvas id="chart-report-1" height="150"></canvas>
+              </div>
+              <div class="report-card" style="flex:1; min-width:320px; background:var(--card-bg); border:1px solid var(--border-color); padding:20px; border-radius:var(--radius-md);">
+                <h3 id="report-chart-title-2" style="margin-top:0; margin-bottom:16px; font-size:1rem; font-weight:600; color:var(--text-primary);">Volume Analysis</h3>
+                <canvas id="chart-report-2" height="150"></canvas>
+              </div>
+            </div>
+
+            <!-- Detailed Table Card -->
+            <div class="rfq-table-wrap">
+              <table class="rfq-table">
+                <thead id="report-table-thead">
+                  <!-- Loaded dynamically -->
+                </thead>
+                <tbody id="report-table-tbody">
+                  <!-- Loaded dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div id="report-empty-state" style="text-align:center; padding:60px 40px; border:1px dashed var(--border-color); border-radius:var(--radius-md); background:var(--card-bg); margin-top:20px;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="margin-bottom:16px;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <h3 style="margin:0 0 8px 0; color:var(--text-primary);">No Report Generated</h3>
+            <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">Select the category, frequency, and period above and click <strong>Generate Report</strong>.</p>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. TASK FORM MODAL (Create/Edit) -->
+  <div id="modal-task-form" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="task-modal-title">New Task</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <form id="task-form">
+        <input type="hidden" id="task-id-field">
+        <div class="form-group">
+          <label for="task-project">Project *</label>
+          <select id="task-project" required>
+            <option value="">Select Project...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="task-title">Title *</label>
+          <input type="text" id="task-title" required placeholder="Enter task title">
+        </div>
+        <div class="form-group">
+          <label for="task-description">Description</label>
+          <textarea id="task-description" rows="3" placeholder="Describe the task details"></textarea>
+        </div>
+        
+        <!-- Department Filter and Assignee in Grid -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="task-assignee-dept-filter">Filter Assignee by Dept</label>
+            <select id="task-assignee-dept-filter">
+              <option value="all">Show All Departments</option>
+              <!-- Populate dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="task-assignee">Assignee</label>
+            <select id="task-assignee">
+              <option value="">Unassigned</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="task-priority">Priority</label>
+            <select id="task-priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="task-status">Status</label>
+            <select id="task-status">
+              <option value="todo" selected>To Do</option>
+              <option value="inprogress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="task-startdate">Start Date</label>
+            <input type="date" id="task-startdate">
+          </div>
+          <div class="form-group">
+            <label for="task-duedate">Due Date</label>
+            <input type="date" id="task-duedate">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="task-allocated-operator">Allocated Operator</label>
+            <select id="task-allocated-operator">
+              <option value="">Select Operator...</option>
+              <!-- Populate dynamically in app.js -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="task-operator-role">Operator Role</label>
+            <select id="task-operator-role">
+              <option value="None">None</option>
+              <option value="Fitter">Fitter</option>
+              <option value="Welder">Welder</option>
+              <option value="Milling Operator">Milling Operator</option>
+              <option value="Drilling & VMC">Drilling & VMC</option>
+              <option value="Assembly Operator">Assembly Operator</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="task-mapped-duration">Mapped Duration (Hours)</label>
+          <input type="number" id="task-mapped-duration" placeholder="e.g. 16" min="0" step="0.5">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. PROJECT FORM MODAL (Create/Edit) -->
+  <div id="modal-project-form" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="project-modal-title">New Project</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <form id="project-form">
+        <input type="hidden" id="project-id-field">
+        <div class="form-group">
+          <label for="project-name">Project Name *</label>
+          <input type="text" id="project-name" required placeholder="Enter project name">
+        </div>
+        <div class="form-group">
+          <label for="project-description">Description</label>
+          <textarea id="project-description" rows="2" placeholder="Brief project summary"></textarea>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="project-startdate">Start Date</label>
+            <input type="date" id="project-startdate">
+          </div>
+          <div class="form-group">
+            <label for="project-enddate">End Date</label>
+            <input type="date" id="project-enddate">
+          </div>
+        </div>
+        
+        <!-- Project Customer Input fields -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="project-customer-name">Customer Name</label>
+            <input type="text" id="project-customer-name" placeholder="e.g. AeroSpace Inc">
+          </div>
+          <div class="form-group">
+            <label for="project-customer-logo">Customer Logo File</label>
+            <input type="file" id="project-customer-logo" accept="image/*" style="font-size:0.8rem; padding:4px 0;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Assign Members</label>
+          <div id="project-members-checkboxes" class="checkbox-list">
+            <!-- Loaded dynamically -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. USER FORM MODAL (Create/Edit) -->
+  <div id="modal-user-form" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="user-modal-title">Add User</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <form id="user-form">
+        <input type="hidden" id="user-id-field">
+        <div class="form-group">
+          <label for="user-name">Full Name *</label>
+          <input type="text" id="user-name" required placeholder="Alice Johnson">
+        </div>
+        <div class="form-group">
+          <label for="user-email">Email Address *</label>
+          <input type="email" id="user-email" required placeholder="alice@company.com">
+        </div>
+        <div class="form-group">
+          <label for="user-password" id="user-password-label">Password *</label>
+          <input type="password" id="user-password" required placeholder="••••••••">
+          <small id="user-password-help" class="form-help hidden">Leave blank to keep existing password.</small>
+        </div>
+        <div class="form-group">
+          <label for="user-dept">Department *</label>
+          <select id="user-dept" required>
+            <!-- Loaded dynamically -->
+          </select>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="user-role">Role</label>
+            <select id="user-role">
+              <option value="member" selected>Member (Employee)</option>
+              <option value="project_manager">Project Manager</option>
+              <option value="operations_head">Operations Head</option>
+              <option value="md">MD (Managing Director)</option>
+              <option value="admin">Admin</option>
+              <option value="superadmin">Super Admin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="user-status">Status</label>
+            <select id="user-status">
+              <option value="active" selected>Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="user-permissions-group" style="margin-top:16px; border-top:1px solid var(--border-color); padding-top:16px;">
+          <label style="font-weight:600; margin-bottom:8px; display:block;">Module Access Permissions</label>
+          <div class="checkbox-list" style="max-height: none; background: transparent; border: none; padding: 0;">
+            <label class="checkbox-item">
+              <input type="checkbox" id="user-perm-projects" checked>
+              <span>Enable Project Management & Task Tracker</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="user-perm-bom">
+              <span>Enable BOM & Procurement Tracker</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="user-perm-rfq">
+              <span>Enable RFQ & Conversion Funnel Tracker</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="user-perm-pr">
+              <span>Enable PR (Purchase Requisition) Tracker</span>
+            </label>
+          </div>
+        </div>
+        <div id="user-error" class="error-message hidden">Error saving user.</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. TASK DETAILS MODAL (Viewer, Comments, Attachments) -->
+  <div id="modal-task-details" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <span id="detail-task-project" class="badge badge-outline">Project Name</span>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      
+      <div class="modal-body-details">
+        <div class="details-left">
+          <h1 id="detail-task-title">Task Title</h1>
+          <div id="detail-task-overlap-warning" class="overlap-warning-banner hidden" style="background:#fef2f2; border:1px solid #fee2e2; border-left:4px solid #ef4444; padding:10px 14px; border-radius:6px; margin: 12px 0; font-size:0.85rem; color:#b91c1c; font-weight:600;">
+            ⚠️ Scheduling Conflict: This operator is assigned to overlapping tasks during this period!
+          </div>
+          <p id="detail-task-desc" class="task-desc-text">Task description text goes here.</p>
+          
+          <!-- Attachments Section -->
+          <div class="task-section">
+            <h3>Attachments</h3>
+            <div id="detail-attachments-list" class="attachments-list">
+              <!-- populated dynamically -->
+              <p class="empty-text">No files attached to this task.</p>
+            </div>
+            
+            <form id="attachment-upload-form" class="attachment-upload-form">
+              <div class="file-input-wrapper">
+                <button type="button" class="btn btn-secondary">Choose File</button>
+                <input type="file" id="attachment-file-input" required>
+                <span id="attachment-file-name" class="file-name-text">No file chosen</span>
+              </div>
+              <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+          </div>
+
+          <!-- Comments Section -->
+          <div class="task-section">
+            <h3>Comments</h3>
+            <div id="detail-comments-list" class="comments-list">
+              <!-- populated dynamically -->
+            </div>
+            
+            <form id="comment-form" class="comment-input-row">
+              <input type="text" id="comment-input" required placeholder="Add a comment or note...">
+              <button type="submit" class="btn btn-primary">Post</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="details-right">
+          <div class="detail-sidebar-block">
+            <label>Status</label>
+            <div class="status-selector-wrapper">
+              <select id="detail-task-status-select" class="form-control">
+                <option value="todo">To Do</option>
+                <option value="inprogress">In Progress</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+          </div>
+          <div class="detail-sidebar-block">
+            <label>Assignee</label>
+            <div class="detail-val" id="detail-task-assignee">Alice Johnson</div>
+          </div>
+          <div class="detail-sidebar-block">
+            <label>Priority</label>
+            <span id="detail-task-priority" class="priority-pill pill-medium">Medium</span>
+          </div>
+          <div class="detail-sidebar-block">
+            <label>Due Date</label>
+            <div class="detail-val" id="detail-task-duedate">July 15, 2026</div>
+          </div>
+          <div class="detail-sidebar-block">
+            <label>Allocated Operator & Role</label>
+            <div class="detail-val" id="detail-task-operator">Unassigned</div>
+          </div>
+          <div class="detail-sidebar-block">
+            <label>Start Date</label>
+            <div class="detail-val" id="detail-task-startdate">No Start Date</div>
+          </div>
+          <div class="detail-sidebar-block">
+            <label>Mapped Duration</label>
+            <div class="detail-val" id="detail-task-duration">No duration mapped</div>
+          </div>
+          <div class="detail-sidebar-block">
+            <label>Created</label>
+            <div class="detail-val date-val" id="detail-task-created">July 8, 2026</div>
+          </div>
+          <div class="detail-sidebar-block admin-pm-only hidden" style="margin-top:24px;">
+            <button id="btn-delete-task" class="btn btn-danger btn-block" style="width:100%;">Delete Task</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- POLICIES MODAL -->
+  <div id="modal-policies" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h2>Software Policies &amp; Usage Terms</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <div style="padding: 20px 24px; max-height: 65vh; overflow-y: auto; line-height: 1.7;">
+        <h3 style="margin-top:0; color:var(--primary-color);">1. Usage Policy</h3>
+        <p>This software (Project &amp; Task Management • Powered by PRO-MFG) is licensed exclusively for internal organizational use. Unauthorized redistribution, reselling, or sub-licensing is strictly prohibited.</p>
+
+        <h3 style="color:var(--primary-color);">2. User Responsibilities</h3>
+        <ul>
+          <li>Each user is responsible for maintaining the confidentiality of their login credentials.</li>
+          <li>Users must not share accounts or attempt unauthorized access to other accounts.</li>
+          <li>Any misuse, data tampering, or attempts to bypass access controls will result in immediate account deactivation.</li>
+        </ul>
+
+        <h3 style="color:var(--primary-color);">3. Data Policy</h3>
+        <p>All project data, task details, comments, and file attachments stored within this system are the property of the organization. The system stores data locally and does not transmit any information to external third-party servers.</p>
+
+        <h3 style="color:var(--primary-color);">4. Privacy Notice</h3>
+        <p>User information (name, email, department, role) is collected solely for authentication and task assignment purposes. No personal data is shared externally. Administrators may view all user records for management purposes as part of their role.</p>
+
+        <h3 style="color:var(--primary-color);">5. File Attachments</h3>
+        <p>Files uploaded as task attachments are stored on the organization's local server under the <code>/uploads</code> directory. It is the administrator's responsibility to ensure appropriate backup and access control for these files.</p>
+
+        <h3 style="color:var(--primary-color);">6. Availability &amp; Support</h3>
+        <p>This software is provided as-is for internal operational use. For technical support, configuration changes, or feature requests, please contact your designated PRO-MFG system administrator.</p>
+
+        <p style="margin-top: 24px; font-size:0.8rem; color: var(--text-secondary);">© 2026 PRO-MFG. Project &amp; Task Management. All rights reserved. Version 1.0</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-close-modal-btn">I Understand</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- BILLING / SUBSCRIPTION MODAL -->
+  <div id="modal-billing" class="modal">
+    <div class="modal-content pricing-modal-content" style="max-width: 1100px; width: 95%;">
+      <div class="modal-header">
+        <h2>Subscription Plans</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <div style="padding: 12px 24px 24px 24px;">
+        <div class="pricing-header">
+          <h1>Choose Your Plan</h1>
+          <p>All plans include AI-powered analysis. 14-day trial on signup.</p>
+        </div>
+
+        <div class="billing-toggle-container">
+          <button type="button" class="billing-toggle-btn active" id="billing-toggle-yearly">Yearly <span class="discount-badge">-17%</span></button>
+          <button type="button" class="billing-toggle-btn" id="billing-toggle-monthly">Monthly</button>
+        </div>
+
+        <div class="pricing-grid">
+          <!-- Starter -->
+          <div class="pricing-card" id="card-Starter">
+            <div class="pricing-card-badge">14-Day Free Trial</div>
+            <h3 class="pricing-card-title">Starter</h3>
+            <div class="pricing-card-price">
+              <span class="currency">₹</span><span class="price-val" data-monthly="3,599" data-yearly="2,999">2,999</span><span class="period">/month</span>
+            </div>
+            <div class="pricing-card-users">Up to 5 users</div>
+            <ul class="pricing-features-list">
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Project & Task Hub only
+              </li>
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Kanban Task Board
+              </li>
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Timeline & Milestones
+              </li>
+            </ul>
+            <button type="button" class="btn btn-block btn-select-plan" data-plan="Starter" data-mrr="2999" style="background: transparent; border: 2px solid #4f46e5; color: #4f46e5; font-weight: 600;">Get Starter</button>
+          </div>
+
+          <!-- Growth -->
+          <div class="pricing-card featured" id="card-Growth">
+            <div class="pricing-card-badge">Most Popular</div>
+            <h3 class="pricing-card-title" style="color: #d97706;">Growth</h3>
+            <div class="pricing-card-price">
+              <span class="currency">₹</span><span class="price-val" data-monthly="9,599" data-yearly="7,999">7,999</span><span class="period">/month</span>
+            </div>
+            <div class="pricing-card-users">Up to 15 users</div>
+            <ul class="pricing-features-list">
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Task Hub included
+              </li>
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                BOM Tracker
+              </li>
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                RFQ Tracking workspace
+              </li>
+            </ul>
+            <button type="button" class="btn btn-primary btn-block btn-select-plan" data-plan="Growth" data-mrr="7999" style="background:#d97706; border-color:#d97706;">Get Growth</button>
+          </div>
+
+          <!-- Business -->
+          <div class="pricing-card best-value" id="card-Business">
+            <div class="pricing-card-badge">Best Value</div>
+            <h3 class="pricing-card-title" style="color: #0284c7;">Business</h3>
+            <div class="pricing-card-price">
+              <span class="currency">₹</span><span class="price-val" data-monthly="17,999" data-yearly="14,999">14,999</span><span class="period">/month</span>
+            </div>
+            <div class="pricing-card-users">Up to 40 users</div>
+            <ul class="pricing-features-list">
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <strong>All 4 live modules</strong>
+              </li>
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                PR Tracking with approvals
+              </li>
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                BOM & RFQ tracking
+              </li>
+            </ul>
+            <button type="button" class="btn btn-primary btn-block btn-select-plan" data-plan="Business" data-mrr="14999" style="background:#0284c7; border-color:#0284c7;">Get Business</button>
+          </div>
+
+          <!-- Enterprise -->
+          <div class="pricing-card" id="card-Enterprise">
+            <h3 class="pricing-card-title">Enterprise</h3>
+            <div class="pricing-card-price" style="font-size: 1.6rem; margin-bottom: 12px; margin-top: 4px;">
+              Custom quote
+            </div>
+            <div class="pricing-card-users">Unlimited users</div>
+            <ul class="pricing-features-list">
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Everything in Business
+              </li>
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Priority support
+              </li>
+              <li>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Early access (Stock/QA)
+              </li>
+            </ul>
+            <button type="button" class="btn btn-block btn-select-plan" data-plan="Enterprise" data-mrr="0" style="background: #0f172a; border: 2px solid #0f172a; color: #ffffff; font-weight: 600;">Contact Sales</button>
+          </div>
+        </div>
+
+        <div class="pricing-footer-text">
+          Secure payments via Razorpay • INR only • Cancel anytime
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RFQ ADD / EDIT MODAL -->
+  <div id="modal-rfq" class="modal">
+    <div class="modal-content" style="max-width:680px;">
+      <div class="modal-header">
+        <h2 id="rfq-modal-title">Add New RFQ</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <form id="rfq-form" style="padding:24px;">
+        <input type="hidden" id="rfq-id-field">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="rfq-customer">Customer Name *</label>
+            <input type="text" id="rfq-customer" required placeholder="e.g. AeroTech Industries">
+          </div>
+          <div class="form-group">
+            <label for="rfq-project">Project / Description *</label>
+            <input type="text" id="rfq-project" required placeholder="e.g. 5-Axis CNC Machine">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="rfq-received">Received Date *</label>
+            <input type="date" id="rfq-received" required>
+          </div>
+          <div class="form-group">
+            <label for="rfq-due">Due Date *</label>
+            <input type="date" id="rfq-due" required>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="rfq-priority">Priority</label>
+            <select id="rfq-priority">
+              <option value="Low">Low</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="rfq-owner">Owner (Assigned To)</label>
+            <select id="rfq-owner">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="rfq-status">Status</label>
+            <select id="rfq-status">
+              <option value="New">New</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Costing">Costing</option>
+              <option value="Waiting for Vendor">Waiting for Vendor</option>
+              <option value="Quote Ready">Quote Ready</option>
+              <option value="Submitted">Submitted</option>
+              <option value="Won">Won</option>
+              <option value="Lost">Lost</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="rfq-progress">Progress % (0–100)</label>
+            <input type="number" id="rfq-progress" min="0" max="100" value="0" placeholder="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="rfq-next-action">Next Action</label>
+          <input type="text" id="rfq-next-action" placeholder="e.g. Send drawing to vendor for price">
+        </div>
+        <div class="form-group">
+          <label for="rfq-remarks">Remarks</label>
+          <textarea id="rfq-remarks" rows="3" placeholder="Any additional notes..."></textarea>
+        </div>
+        <div id="rfq-error" class="error-message hidden">Error saving RFQ.</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="rfq-submit-btn">Save RFQ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- BOM MANUAL ITEM MODAL -->
+  <div id="modal-bom" class="modal">
+    <div class="modal-content" style="max-width: 750px;">
+      <div class="modal-header">
+        <h2 id="bom-modal-title">Add BOM Item</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <form id="bom-form">
+        <input type="hidden" id="bom-id-field">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label for="bom-item-code">Item Code / Part No *</label>
+            <input type="text" id="bom-item-code" required placeholder="e.g. FW-101">
+          </div>
+          <div class="form-group">
+            <label for="bom-category">Category *</label>
+            <select id="bom-category" required>
+              <option>Raw Material</option>
+              <option>Bought-Out-Part (BOP)</option>
+              <option>Electrical</option>
+              <option>Pneumatic</option>
+              <option>Fasteners</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bom-status">Status *</label>
+            <select id="bom-status" required>
+              <option>Draft</option>
+              <option>Awaiting Approval</option>
+              <option>Approved</option>
+              <option>Enquiry Sent</option>
+              <option>PO Placed</option>
+              <option>Received</option>
+              <option>Issued</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid" style="grid-template-columns:2fr 1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label for="bom-description">Description / Part Name *</label>
+            <input type="text" id="bom-description" required placeholder="e.g. Base Mount Tube">
+          </div>
+          <div class="form-group">
+            <label for="bom-quantity">Quantity *</label>
+            <input type="number" id="bom-quantity" required placeholder="1" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label for="bom-unit">Unit *</label>
+            <input type="text" id="bom-unit" required placeholder="e.g. Nos" value="Nos">
+          </div>
+        </div>
+
+        <!-- Supplier Quotation Comparison Section -->
+        <h3 style="font-size:0.9rem; margin-top:20px; margin-bottom:12px; font-weight:700; color:var(--primary-color); border-bottom:1px solid var(--border-color); padding-bottom:6px;">Supplier Quotation Comparison (Compare Quotes)</h3>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+          <!-- Supplier A -->
+          <div style="background:var(--primary-light); padding:12px; border-radius:6px; border:1px solid var(--border-color);">
+            <h4 style="margin:0 0 10px 0; font-size:0.8rem; font-weight:700; color:var(--primary-color);">Supplier A</h4>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="text" id="bom-supA-name" placeholder="Supplier A Name" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="number" id="bom-supA-price" placeholder="Price (₹)" style="font-size:0.75rem; padding:6px 8px;" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="text" id="bom-supA-delivery" placeholder="Delivery (e.g. 5 days)" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <input type="text" id="bom-supA-payment" placeholder="Payment Terms" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+          </div>
+
+          <!-- Supplier B -->
+          <div style="background:var(--primary-light); padding:12px; border-radius:6px; border:1px solid var(--border-color);">
+            <h4 style="margin:0 0 10px 0; font-size:0.8rem; font-weight:700; color:var(--primary-color);">Supplier B</h4>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="text" id="bom-supB-name" placeholder="Supplier B Name" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="number" id="bom-supB-price" placeholder="Price (₹)" style="font-size:0.75rem; padding:6px 8px;" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="text" id="bom-supB-delivery" placeholder="Delivery (e.g. 7 days)" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <input type="text" id="bom-supB-payment" placeholder="Payment Terms" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+          </div>
+
+          <!-- Supplier C -->
+          <div style="background:var(--primary-light); padding:12px; border-radius:6px; border:1px solid var(--border-color);">
+            <h4 style="margin:0 0 10px 0; font-size:0.8rem; font-weight:700; color:var(--primary-color);">Supplier C</h4>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="text" id="bom-supC-name" placeholder="Supplier C Name" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="number" id="bom-supC-price" placeholder="Price (₹)" style="font-size:0.75rem; padding:6px 8px;" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="text" id="bom-supC-delivery" placeholder="Delivery (e.g. 3 days)" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <input type="text" id="bom-supC-payment" placeholder="Payment Terms" style="font-size:0.75rem; padding:6px 8px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label for="bom-winner">Awarded / Winning Supplier *</label>
+            <select id="bom-winner" required>
+              <option value="">-- Select Winner --</option>
+              <option value="Supplier A">Supplier A</option>
+              <option value="Supplier B">Supplier B</option>
+              <option value="Supplier C">Supplier C</option>
+              <option value="None">None (Under Review)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bom-target-date">Target Lead Date</label>
+            <input type="date" id="bom-target-date">
+          </div>
+        </div>
+
+        <div id="bom-error" class="error-message hidden">Error saving BOM item.</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="bom-submit-btn">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PR FORM MODAL -->
+  <div id="modal-pr-form" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h2>Raise Purchase Requisition</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <form id="pr-form">
+        <div class="form-group">
+          <label for="pr-project">Linked Project *</label>
+          <select id="pr-project" required>
+            <option value="">-- Select Project --</option>
+          </select>
+        </div>
+        
+        <div class="form-group" style="margin-top:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label style="font-weight:600; margin:0;">Requisition Items *</label>
+            <button type="button" class="btn btn-secondary" id="btn-pr-add-row" style="font-size:0.75rem; padding:4px 8px;">+ Add Item Row</button>
+          </div>
+          <p class="helper-text">Add items needed to be purchased.</p>
+          
+          <table class="data-table" id="pr-items-table" style="margin-top:8px;">
+            <thead>
+              <tr>
+                <th style="width:50%;">Item Description *</th>
+                <th>Qty *</th>
+                <th>Unit *</th>
+                <th>Est. Rate *</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="pr-items-tbody">
+              <!-- Dynamic rows go here -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="pr-form-error" class="error-message hidden">Error submitting Purchase Requisition.</div>
+        <div class="modal-footer" style="margin-top:20px;">
+          <button type="button" class="btn btn-secondary btn-close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Requisition</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PR DETAILS MODAL -->
+  <div id="modal-pr-details" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h2 id="detail-pr-title">PR Detail</h2>
+        <button class="btn-close-modal">&times;</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap:16px; background:var(--bg-secondary); padding:16px; border-radius:6px; border:1px solid var(--border-color);">
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Project</div>
+            <div id="detail-pr-project" style="font-weight:600;">Loading...</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Raised By</div>
+            <div id="detail-pr-raisedby" style="font-weight:600;">Loading...</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Raised Date</div>
+            <div id="detail-pr-date" style="font-weight:600;">Loading...</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Status</div>
+            <div id="detail-pr-status" style="font-weight:600;">Loading...</div>
+          </div>
+        </div>
+
+        <div>
+          <h4 style="margin-bottom:8px;">Requisition Items Checklist</h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item Description</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Est. Rate</th>
+                <th>Total Cost</th>
+              </tr>
+            </thead>
+            <tbody id="detail-pr-items-tbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Approval Logs Section -->
+        <div id="detail-pr-approvals-section" style="border-top:1px solid var(--border-color); padding-top:16px; display:flex; flex-direction:column; gap:12px;">
+          <h4 style="margin-bottom:4px;">Approval & Tracking Log</h4>
+          <div id="detail-pr-ops-log" style="padding:12px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:4px;">
+            <strong>Level 1: Operations Head Approval</strong>
+            <div id="detail-pr-ops-log-content" style="font-size:0.85rem; margin-top:4px; color:var(--text-secondary);">No action taken yet.</div>
+          </div>
+          <div id="detail-pr-md-log" style="padding:12px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:4px;">
+            <strong>Level 2: Managing Director Approval</strong>
+            <div id="detail-pr-md-log-content" style="font-size:0.85rem; margin-top:4px; color:var(--text-secondary);">No action taken yet.</div>
+          </div>
+        </div>
+
+        <!-- Action Box for approval or ordering -->
+        <div id="detail-pr-action-box" class="detail-panel" style="padding:16px; border:1px dashed var(--primary-color); border-radius:6px; background-color:rgba(59,130,246,0.05); display:none;">
+          <h4 id="detail-pr-action-title" style="margin-bottom:8px; color:var(--primary-color);">Perform Requisition Action</h4>
+          
+          <!-- Remarks input for Ops Head / MD -->
+          <div id="detail-pr-remarks-group" class="form-group" style="margin-bottom:12px;">
+            <label for="detail-pr-remarks">Approval/Rejection Remarks</label>
+            <textarea id="detail-pr-remarks" rows="2" style="width:100%;" placeholder="Enter remarks..."></textarea>
+          </div>
+          
+          <!-- PO Input for Purchasing dept -->
+          <div id="detail-pr-po-group" class="form-group" style="margin-bottom:12px; display:none;">
+            <label for="detail-pr-po-number">Purchase Order (PO) Reference # *</label>
+            <input type="text" id="detail-pr-po-number" style="width:100%;" placeholder="e.g. PO-7890">
+          </div>
+
+          <div style="display:flex; gap:12px;">
+            <button class="btn btn-primary" id="btn-pr-action-approve">Approve Requisition</button>
+            <button class="btn btn-danger" id="btn-pr-action-reject">Reject Requisition</button>
+            <button class="btn btn-primary" id="btn-pr-action-po" style="display:none;">Record Purchase & Issue PO</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript App Logic -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="chart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

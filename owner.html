@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaaS Owner Panel | Antigravity PM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #10b981;
+      --green-dark: #047857;
+      --green-sidebar: #064e3b;
+      --green-light: #ecfdf5;
+      --bg: #f0fdf4;
+      --card: #ffffff;
+      --border: #d1fae5;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --radius: 10px;
+      --shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ============ LOGIN SCREEN ============ */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #064e3b 0%, #065f46 60%, #047857 100%);
+    }
+
+    .login-box {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-logo .badge {
+      display: inline-block;
+      background: var(--green-light);
+      color: var(--green-dark);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 100px;
+      margin-bottom: 12px;
+    }
+
+    .login-logo h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .login-logo p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: var(--text); }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { outline: none; border-color: var(--green); }
+
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: var(--green);
+      color: white;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+    .btn-login:hover { background: var(--green-dark); }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    #login-error {
+      color: var(--danger);
+      font-size: 0.85rem;
+      margin-top: 12px;
+      text-align: center;
+      display: none;
+    }
+
+    /* ============ APP LAYOUT ============ */
+    #app-screen {
+      display: none;
+      height: 100vh;
+      flex-direction: row;
+    }
+
+    .sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: var(--green-sidebar);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-brand {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-brand .brand-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .sidebar-brand h2 {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 0;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 20px;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .nav-link.active {
+      color: var(--green);
+      border-left: 3px solid var(--green);
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .owner-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .owner-info {
+      margin-left: 10px;
+      flex: 1;
+    }
+
+    .owner-info .name {
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .owner-info .role-tag {
+      color: var(--green);
+      font-size: 0.7rem;
+    }
+
+    .btn-logout {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.6);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,0.1); color: white; }
+
+    /* ============ MAIN AREA ============ */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg);
+      padding: 32px;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    /* ============ METRIC CARDS ============ */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .metric-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .metric-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--green-dark);
+    }
+
+    .metric-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ============ TABLES ============ */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header h3 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #f9fafb;
+      padding: 12px 20px;
+      text-align: left;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 14px 20px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f9fefb; }
+
+    .pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .pill-green { background: #d1fae5; color: #065f46; }
+    .pill-red { background: #fee2e2; color: #b91c1c; }
+    .pill-yellow { background: #fef3c7; color: #92400e; }
+    .pill-blue { background: #dbeafe; color: #1e40af; }
+
+    .btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s;
+      margin-right: 4px;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-sm { padding: 5px 10px; font-size: 0.75rem; }
+    .btn-primary { background: var(--green); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-warning { background: var(--warning); color: white; }
+    .btn-secondary { background: #e5e7eb; color: var(--text); }
+
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(16,185,129,0.3);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="badge">Antigravity PM</div>
+      <h1>Owner Panel</h1>
+      <p>Restricted access — platform operators only</p>
+    </div>
+    <form id="owner-login-form">
+      <div class="form-group">
+        <label for="owner-email">Owner Email</label>
+        <input type="email" id="owner-email" required placeholder="owner@saas.com" value="owner@saas.com">
+      </div>
+      <div class="form-group">
+        <label for="owner-password">Password</label>
+        <input type="password" id="owner-password" required placeholder="••••••••" value="owner123">
+      </div>
+      <button type="submit" class="btn-login" id="login-btn">Login to Owner Panel</button>
+      <div id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="app-screen">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-badge">Owner Panel</div>
+      <h2>Antigravity PM</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-link active" data-page="page-dashboard">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-link" data-page="page-orgs">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Organizations
+      </a>
+      <a class="nav-link" data-page="page-plans">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Plans & Pricing
+      </a>
+      <a class="nav-link" data-page="page-billing">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Billing
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="owner-avatar">O</div>
+      <div class="owner-info">
+        <div class="name">SaaS Owner</div>
+        <div class="role-tag">Platform Owner</div>
+      </div>
+      <button class="btn-logout" id="btn-logout">Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-title">Overview Dashboard</div>
+      <div class="page-subtitle">Your platform at a glance</div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">MRR</div>
+          <div class="metric-value" id="m-mrr">—</div>
+          <div class="metric-sub">Monthly Recurring Revenue</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">ARR</div>
+          <div class="metric-value" id="m-arr">—</div>
+          <div class="metric-sub">Annual Run Rate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Active Orgs</div>
+          <div class="metric-value" id="m-orgs">—</div>
+          <div class="metric-sub">Organizations on platform</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Users</div>
+          <div class="metric-value" id="m-users">—</div>
+          <div class="metric-sub">Across all organizations</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORGANIZATIONS -->
+    <div class="page" id="page-orgs">
+      <div class="page-title">Organizations</div>
+      <div class="page-subtitle">Every customer using your platform</div>
+      <div class="card">
+        <div class="card-header">
+          <h3>All Organizations</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Organization</th>
+              <th>Plan</th>
+              <th>MRR</th>
+              <th>Status</th>
+              <th>Trial Ends</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="org-tbody">
+            <tr><td colspan="6" class="loading-state"><span class="spinner"></span> Loading organizations...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PLANS -->
+    <div class="page" id="page-plans">
+      <div class="page-title">Plans & Pricing</div>
+      <div class="page-subtitle">Current subscription tiers</div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Pricing Tiers</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Plan Name</th>
+              <th>Price / Month</th>
+              <th>Max Users</th>
+              <th>Features</th>
+            </tr>
+          </thead>
+          <tbody id="plans-tbody">
+            <tr><td colspan="4" class="loading-state"><span class="spinner"></span> Loading plans...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BILLING -->
+    <div class="page" id="page-billing">
+      <div class="page-title">Billing & Revenue</div>
+      <div class="page-subtitle">Transaction history and payment tracking</div>
+      <div class="card" style="padding: 48px; text-align:center; color: var(--text-muted);">
+        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin: 0 auto 16px; display:block; opacity:0.4"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <h3 style="margin-bottom:8px; color:var(--text);">Razorpay Integration Pending</h3>
+        <p>Connect Razorpay to view live transaction history, refunds, and revenue analytics.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  let ownerToken = localStorage.getItem('ownerToken');
+
+  // Auto-login if token exists
+  if (ownerToken) {
+    showApp();
+  }
+
+  // Login form
+  document.getElementById('owner-login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    btn.textContent = 'Logging in...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('owner-email').value,
+          password: document.getElementById('owner-password').value
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      if (data.user.role !== 'owner') throw new Error('Access denied. This panel is for Platform Owners only.');
+
+      ownerToken = data.token;
+      localStorage.setItem('ownerToken', ownerToken);
+      showApp();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+      btn.textContent = 'Login to Owner Panel';
+      btn.disabled = false;
+    }
+  });
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    const appEl = document.getElementById('app-screen');
+    appEl.style.display = 'flex';
+    loadDashboard();
+    loadOrganizations();
+    loadPlans();
+  }
+
+  document.getElementById('btn-logout').addEventListener('click', () => {
+    localStorage.removeItem('ownerToken');
+    location.reload();
+  });
+
+  // Navigation
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      link.classList.add('active');
+      document.getElementById(link.getAttribute('data-page')).classList.add('active');
+    });
+  });
+
+  async function api(endpoint, method = 'GET', body = null) {
+    const opts = {
+      method,
+      headers: { 'Authorization': 'Bearer ' + ownerToken }
+    };
+    if (body) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    const res = await fetch(endpoint, opts);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem('ownerToken');
+      location.reload();
+    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API Error');
+    return data;
+  }
+
+  async function loadDashboard() {
+    try {
+      const m = await api('/api/owner/metrics');
+      document.getElementById('m-mrr').textContent = '$' + m.mrr;
+      document.getElementById('m-arr').textContent = '$' + m.arr;
+      document.getElementById('m-orgs').textContent = m.activeOrgs;
+      document.getElementById('m-users').textContent = m.activeUsers;
+    } catch(e) { console.error(e); }
+  }
+
+  async function loadOrganizations() {
+    const tbody = document.getElementById('org-tbody');
+    try {
+      const orgs = await api('/api/owner/organizations');
+      if (!orgs.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">No organizations yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = orgs.map(org => `
+        <tr>
+          <td><strong>${esc(org.name)}</strong><br><span style="font-size:0.72rem;color:#9ca3af;font-family:monospace;">${org.id}</span></td>
+          <td><span class="pill pill-blue">${esc(org.plan)}</span></td>
+          <td><strong>$${org.mrr || 0}</strong></td>
+          <td><span class="pill ${org.status === 'active' ? 'pill-green' : 'pill-red'}">${org.status}</span></td>
+          <td>${org.trialEndsAt ? new Date(org.trialEndsAt).toLocaleDateString() : 'N/A'}</td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="toggleOrg('${org.id}','${org.status}')">${org.status === 'active' ? 'Suspend' : 'Reactivate'}</button>
+            <button class="btn btn-sm btn-warning" onclick="impersonate('${org.id}')">Impersonate</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="6" style="color:red;text-align:center;padding:24px;">${e.message}</td></tr>`;
+    }
+  }
+
+  async function loadPlans() {
+    const tbody = document.getElementById('plans-tbody');
+    try {
+      const plans = await api('/api/owner/plans');
+      tbody.innerHTML = plans.map(p => `
+        <tr>
+          <td><strong>${esc(p.name)}</strong></td>
+          <td><span class="pill pill-green">$${p.price}/mo</span></td>
+          <td>${p.maxUsers} users</td>
+          <td style="font-size:0.8rem;color:#6b7280;">${p.features.join(' · ')}</td>
+        </tr>
+      `).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="4" style="color:red;text-align:center;padding:24px;">${e.message}</td></tr>`;
+    }
+  }
+
+  async function toggleOrg(id, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    if (!confirm(`${newStatus === 'suspended' ? 'Suspend' : 'Reactivate'} this organization?`)) return;
+    try {
+      await api(`/api/owner/organizations/${id}`, 'PUT', { status: newStatus });
+      loadOrganizations();
+      loadDashboard();
+    } catch(e) { alert(e.message); }
+  }
+
+  async function impersonate(orgId) {
+    if (!confirm('Login as this org\'s admin? This action will be logged.')) return;
+    try {
+      const data = await api(`/api/owner/impersonate/${orgId}`, 'POST');
+      localStorage.setItem('token', data.token);
+      window.open('/', '_blank');
+    } catch(e) { alert(e.message); }
+  }
+
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+</script>
+</body>
+</html>
