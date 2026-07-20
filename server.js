@@ -71,10 +71,26 @@ app.use((req, res, next) => {
 // Serve uploaded files statically
 app.use('/uploads', express.static(uploadsDir));
 
-// Serve SPA frontend static files
+// Serve SPA frontend static files (supports both /public/ subfolder and root folder)
+const publicDir = fs.existsSync(path.join(__dirname, 'public')) ? path.join(__dirname, 'public') : __dirname;
+app.use(express.static(publicDir));
 app.use(express.static(path.join(__dirname, 'public')));
-app.get('/owner', (req, res) => res.sendFile(path.join(__dirname, 'public', 'owner.html')));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+app.get('/owner', (req, res) => {
+  const ownerPath = fs.existsSync(path.join(__dirname, 'public', 'owner.html'))
+    ? path.join(__dirname, 'public', 'owner.html')
+    : path.join(__dirname, 'owner.html');
+  if (fs.existsSync(ownerPath)) return res.sendFile(ownerPath);
+  res.status(404).send('Owner page not found.');
+});
+
+app.get('/', (req, res) => {
+  const indexPath = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
+    ? path.join(__dirname, 'public', 'index.html')
+    : path.join(__dirname, 'index.html');
+  if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
+  res.status(404).send('Index page not found.');
+});
 
 // Mock Email Notification Helper
 function sendMockEmail(userId, message) {
