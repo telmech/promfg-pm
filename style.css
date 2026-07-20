@@ -1779,80 +1779,223 @@ h1, h2, h3, h4, h5, h6 {
   background-color: transparent;
 }
 
-/* ==================== RESPONSIVE STYLES ==================== */
+/* ==================== RESPONSIVE & MOBILE OVERHAUL ==================== */
 @media (max-width: 992px) {
-  .dashboard-details-grid {
-    grid-template-columns: 1fr;
-  }
+  .dashboard-details-grid,
   .reports-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
   .report-card.full-width {
-    grid-column: span 1;
+    grid-column: span 1 !important;
+  }
+  .rfq-stats-container,
+  .bom-stats-container {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
+
 @media (max-width: 768px) {
+  /* Touch & Screen Baselines */
   body {
-    overflow: auto;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
   }
-  
+
+  /* Login / Signup Mobile Card */
+  .login-container {
+    padding: 16px 12px !important;
+  }
+  .login-card {
+    width: 100% !important;
+    max-width: 440px !important;
+    padding: 24px 20px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+  }
+  .login-card input,
+  .login-card select,
+  .login-card button {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS safari */
+    min-height: 46px !important;
+  }
+
+  /* Main Container & Navigation Bar */
   .app-container {
-    flex-direction: column;
-    height: auto;
-    width: 100%;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    width: 100% !important;
   }
-  
+
   .sidebar {
-    width: 100%;
-    height: auto;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    width: 100% !important;
+    height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
   }
-  
+
+  .sidebar-header {
+    padding: 12px 16px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
   .sidebar-nav {
-    padding: 10px;
+    padding: 8px 12px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important; /* Firefox */
   }
+  .sidebar-nav::-webkit-scrollbar {
+    display: none !important; /* Chrome/Safari */
+  }
+
   .sidebar-nav ul {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 4px;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
   }
+
   .sidebar-nav li {
-    margin-bottom: 0;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
   }
+
   .nav-link {
-    padding: 8px 12px;
-    font-size: 0.85rem;
+    padding: 8px 14px !important;
+    font-size: 0.82rem !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
   }
+
+  .nav-link.active {
+    background: var(--primary-color) !important;
+    color: #ffffff !important;
+  }
+
   .sidebar-footer {
-    display: none;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 16px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
+  .powered-by-promfg {
+    display: none !important;
+  }
+
+  /* Header & Viewport Container */
   .app-header {
-    padding: 0 16px;
+    padding: 12px 16px !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
   }
+
+  .header-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
   .viewport-container {
-    padding: 16px;
-    height: auto;
-    overflow-y: visible;
+    padding: 12px !important;
+    height: auto !important;
+    overflow-y: visible !important;
   }
+
+  /* Responsive Metric Cards */
+  .rfq-stats-container,
+  .bom-stats-container,
+  .portal-dashboard-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .rfq-stat-card {
+    padding: 12px !important;
+  }
+  .rfq-stat-val {
+    font-size: 1.25rem !important;
+  }
+  .rfq-stat-label {
+    font-size: 0.7rem !important;
+  }
+
+  /* Action Bars & Filters */
+  .rfq-filter-bar,
+  .projects-header,
+  .viewport-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .rfq-filter-bar > div,
+  .projects-header > div {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Action Buttons Touch Targets */
+  .btn {
+    min-height: 42px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 600 !important;
+  }
+
+  /* Responsive Tables */
+  .rfq-table-wrap,
+  .bom-table-wrap,
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px !important;
+    margin-top: 10px !important;
+  }
+
+  table {
+    min-width: 650px !important;
+  }
+
+  /* Kanban Board on Mobile */
   .kanban-board {
-    grid-template-columns: 1fr;
-    height: auto;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    height: auto !important;
   }
+  .kanban-column {
+    max-height: 500px !important;
+  }
+
+  /* Modals on Mobile */
+  .modal-content {
+    width: 95% !important;
+    max-width: 500px !important;
+    max-height: 90vh !important;
+    padding: 18px 16px !important;
+    margin: 10px auto !important;
+    border-radius: 16px !important;
+    overflow-y: auto !important;
+  }
+
   .modal-body-details {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
   .details-right {
-    border-left: none;
-    border-top: 1px solid var(--border-color);
-    padding-left: 0;
-    padding-top: 20px;
+    border-left: none !important;
+    border-top: 1px solid var(--border-color) !important;
+    padding-left: 0 !important;
+    padding-top: 16px !important;
   }
-  .gantt-grid {
-    grid-template-columns: 120px 1fr;
-  }
+
+  .gantt-grid,
   .gantt-header-row {
-    grid-template-columns: 120px 1fr;
+    grid-template-columns: 100px 1fr !important;
   }
 }
 
