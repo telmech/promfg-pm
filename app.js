@@ -308,11 +308,11 @@ function showApp() {
   const initials = state.currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   document.getElementById('user-avatar-initials').textContent = initials;
   document.getElementById('user-display-name').textContent = state.currentUser.name;
-  document.getElementById('user-display-role').textContent = state.currentUser.role.replace('_', ' ');
+  document.getElementById('user-display-role').textContent = formatRoleTitle(state.currentUser.role);
   
   const userDisp = document.getElementById('header-user-display');
   if (userDisp && state.currentUser) {
-    userDisp.textContent = `${state.currentUser.name} (${state.currentUser.role.replace('_', ' ')})`;
+    userDisp.textContent = `${state.currentUser.name} (${formatRoleTitle(state.currentUser.role)})`;
   }
   
   const role = state.currentUser.role;
@@ -1414,8 +1414,8 @@ function renderTeam() {
     tr.innerHTML = `
       <td><strong>${escapeHTML(user.name)}</strong></td>
       <td>${escapeHTML(user.email)}</td>
-      <td><span class="priority-pill pill-medium">${user.role.replace('_', ' ')}</span></td>
-      <td><span class="badge badge-outline">${escapeHTML(user.department || 'Engineering')}</span></td>
+      <td><span class="priority-pill pill-medium" style="text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">${formatRoleTitle(user.role).toUpperCase()}</span></td>
+      <td><span class="badge badge-outline" style="white-space:nowrap; display:inline-block; padding: 4px 10px; border-radius: 12px; font-weight:600;">${escapeHTML(user.department || 'Engineering')}</span></td>
       <td>
         <div style="font-size:0.85rem; font-weight:600;">${user.plan || 'Free Trial'}</div>
         <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">${user.paymentStatus || 'unpaid'}</div>
@@ -1855,15 +1855,14 @@ function openUserFormModal(userId = null) {
     document.getElementById('user-status').value = user.status;
     
     // Load granular module permissions
-    const perms = user.permissions || {
-      projects: true,
-      bom: user.department === 'Purchasing',
-      rfq: user.role === 'admin' || user.role === 'owner' || user.role === 'project_manager' || user.role === 'superadmin'
-    };
+    const perms = user.permissions || {};
+    const isDeptPurchasing = user.department === 'Purchasing';
+    const isManagerRole = user.role === 'admin' || user.role === 'superadmin' || user.role === 'owner' || user.role === 'project_manager' || user.role === 'operations_head' || user.role === 'md';
+
     document.getElementById('user-perm-projects').checked = perms.projects !== false;
-    document.getElementById('user-perm-bom').checked = perms.bom === true;
-    document.getElementById('user-perm-rfq').checked = perms.rfq === true;
-    document.getElementById('user-perm-pr').checked = perms.pr !== false;
+    document.getElementById('user-perm-bom').checked = perms.bom !== undefined ? perms.bom === true : (isDeptPurchasing || isManagerRole);
+    document.getElementById('user-perm-rfq').checked = perms.rfq !== undefined ? perms.rfq === true : isManagerRole;
+    document.getElementById('user-perm-pr').checked = perms.pr !== undefined ? perms.pr === true : (isManagerRole || isDeptPurchasing);
   } else {
     document.getElementById('user-modal-title').textContent = 'Add New Coworker';
     document.getElementById('user-id-field').value = '';
@@ -3172,6 +3171,19 @@ function formatDateFull(dateStr) {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function formatRoleTitle(role) {
+  if (!role) return '';
+  const r = role.toLowerCase();
+  if (r === 'md') return 'MD';
+  if (r === 'admin') return 'Admin';
+  if (r === 'superadmin') return 'Super Admin';
+  if (r === 'project_manager') return 'Project Manager';
+  if (r === 'operations_head') return 'Operations Head';
+  if (r === 'member') return 'Member';
+  if (r === 'owner') return 'Owner';
+  return role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 }
 
 // Date difference checker
