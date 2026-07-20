@@ -63,9 +63,9 @@ if (!tableExists) {
       );
 
       const ownerHash = bcrypt.hashSync('owner123', 10);
-      const adminHash = bcrypt.hashSync('password123', 10);
-      const pmHash = bcrypt.hashSync('pm123', 10);
-      const userHash = bcrypt.hashSync('password123', 10);
+      const adminHash = bcrypt.hashSync('admin123', 10);
+      const pmHash = bcrypt.hashSync('admin123', 10);
+      const userHash = bcrypt.hashSync('admin123', 10);
 
       db.prepare(`
         INSERT INTO users (id, org_id, name, email, password, role, department, status, created_at, permissions_json)
@@ -78,6 +78,22 @@ if (!tableExists) {
         ownerHash,
         'owner',
         'Platform',
+        'active',
+        new Date().toISOString(),
+        '{}'
+      );
+
+      db.prepare(`
+        INSERT INTO users (id, org_id, name, email, password, role, department, status, created_at, permissions_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        'u1',
+        ORG_ID,
+        'Super Admin',
+        'superadmin@org.com',
+        adminHash,
+        'admin',
+        'Management',
         'active',
         new Date().toISOString(),
         '{}'
