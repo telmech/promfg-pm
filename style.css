@@ -1819,6 +1819,43 @@ h1, h2, h3, h4, h5, h6 {
     min-height: 46px !important;
   }
 
+  /* Native-Feel Mobile Bottom App Navigation Bar */
+  .mobile-bottom-bar {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 64px !important;
+    background: #0f172a !important;
+    border-top: 1px solid #1e293b !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35) !important;
+    z-index: 9999 !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    padding: 0 4px !important;
+  }
+
+  .mobile-nav-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #94a3b8 !important;
+    text-decoration: none !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+    gap: 3px !important;
+  }
+
+  .mobile-nav-item.active {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.15) !important;
+  }
+
   /* Main Container & Navigation Bar */
   .app-container {
     flex-direction: column !important;
@@ -1833,21 +1870,15 @@ h1, h2, h3, h4, h5, h6 {
     border-right: none !important;
     border-bottom: 1px solid var(--border-color) !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1000 !important;
   }
 
-  .sidebar-header {
-    padding: 12px 16px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  .sidebar-nav,
+  .sidebar-footer {
+    display: none !important;
   }
 
-  .sidebar-nav {
-    padding: 8px 12px !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important; /* Firefox */
+  .viewport-container {
+    padding: 12px 12px 80px 12px !important;
   }
   .sidebar-nav::-webkit-scrollbar {
     display: none !important; /* Chrome/Safari */

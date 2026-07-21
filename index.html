@@ -1897,6 +1897,34 @@
     </div>
   </div>
 
+  <!-- ==================== NATIVE-FEEL MOBILE BOTTOM APP NAVIGATION BAR ==================== -->
+  <div id="mobile-bottom-bar" class="mobile-bottom-bar hidden">
+    <a href="#portal" class="mobile-nav-item active" data-target="view-portal">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <span>Home</span>
+    </a>
+    <a href="#projects" class="mobile-nav-item project-access-only" data-target="view-projects">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+      <span>Projects</span>
+    </a>
+    <a href="#tasks" class="mobile-nav-item project-access-only" data-target="view-tasks">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+      <span>Tasks</span>
+    </a>
+    <a href="#bom" class="mobile-nav-item purchasing-admin-only" data-target="view-bom">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+      <span>BOM</span>
+    </a>
+    <a href="#rfq" class="mobile-nav-item rfq-access-only" data-target="view-rfq">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      <span>RFQ</span>
+    </a>
+    <a href="#pr" class="mobile-nav-item pr-access-only" data-target="view-pr">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      <span>PR</span>
+    </a>
+  </div>
+
   <!-- JavaScript App Logic -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="chart.js"></script>

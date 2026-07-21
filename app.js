@@ -127,8 +127,8 @@ function navigateTo(viewId) {
   };
   document.getElementById('view-title').textContent = titleMap[viewId] || 'Project & Task Manager';
   
-  // Update active navigation link
-  document.querySelectorAll('.nav-link').forEach(link => {
+  // Update active navigation link (both desktop sidebar and mobile bottom bar)
+  document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(link => {
     if (link.getAttribute('data-target') === `view-${viewId}`) {
       link.classList.add('active');
     } else {
@@ -304,6 +304,8 @@ async function showLogin() {
 function showApp() {
   document.getElementById('login-container').classList.add('hidden');
   document.getElementById('app-container').classList.remove('hidden');
+  const mobileBar = document.getElementById('mobile-bottom-bar');
+  if (mobileBar) mobileBar.classList.remove('hidden');
   
   const initials = state.currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   document.getElementById('user-avatar-initials').textContent = initials;
@@ -2588,11 +2590,14 @@ function navigateToDashboardCard(view, statusFilter) {
 function setupEventListeners() {
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
-  document.querySelectorAll('.nav-link').forEach(link => {
+  document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      const viewId = link.getAttribute('href').substring(1);
-      navigateTo(viewId);
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('#')) {
+        const viewId = href.substring(1);
+        navigateTo(viewId);
+      }
     });
   });
 
