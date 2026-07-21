@@ -304,8 +304,6 @@ async function showLogin() {
 function showApp() {
   document.getElementById('login-container').classList.add('hidden');
   document.getElementById('app-container').classList.remove('hidden');
-  const mobileBar = document.getElementById('mobile-bottom-bar');
-  if (mobileBar) mobileBar.classList.remove('hidden');
   
   const initials = state.currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   document.getElementById('user-avatar-initials').textContent = initials;
@@ -380,7 +378,7 @@ function showApp() {
 
   // Hide/Show PR based on permissions & plan
   const planAllowsPR = (plan === 'Business' || plan === 'Enterprise' || plan === 'Pro Plan' || plan === 'Free Trial');
-  const hasPR = planAllowsPR && (isAdmin || (state.currentUser.permissions && state.currentUser.permissions.pr === true) || role === 'operations_head' || role === 'md');
+  const hasPR = planAllowsPR && (isAdmin || (state.currentUser.permissions && state.currentUser.permissions.pr === true) || role === 'operations_head' || role === 'md' || state.currentUser.department === 'Purchasing');
   if (hasPR) {
     document.querySelectorAll('.pr-access-only').forEach(el => el.classList.remove('hidden'));
   } else {
@@ -498,14 +496,21 @@ function applyBranding() {
   });
 
   document.querySelectorAll('.dynamic-logo-login-container').forEach(el => {
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
     if (logoFilename) {
-      el.style.maxWidth = '300px';
-      el.style.maxHeight = '120px';
-      el.innerHTML = `<img src="/uploads/${logoFilename}" class="company-logo-img" style="max-height: 100px; max-width: 280px; object-fit: contain; border-radius: 0;" alt="${escapeHTML(compName)}">`;
+      el.style.maxWidth = '280px';
+      el.style.maxHeight = '100px';
+      el.style.width = '100%';
+      el.style.height = 'auto';
+      el.innerHTML = `<img src="/uploads/${logoFilename}" class="company-logo-img" style="max-height: 90px; max-width: 260px; object-fit: contain; border-radius: 0; display:block; margin: 0 auto;" alt="${escapeHTML(compName)}">`;
     } else {
-      el.style.maxWidth = '80px';
+      el.style.maxWidth = '100%';
       el.style.maxHeight = '80px';
-      el.innerHTML = `<svg class="default-login-logo-svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`;
+      el.style.width = '100%';
+      el.style.height = 'auto';
+      el.innerHTML = `<img src="/logo.jpg" onerror="this.onerror=null; this.src='/uploads/logo.jpg';" class="company-logo-img" style="max-height: 80px; max-width: 220px; object-fit: contain; border-radius: 0; display:block; margin: 0 auto;" alt="${escapeHTML(compName)}">`;
     }
   });
 
@@ -2681,14 +2686,21 @@ function setupEventListeners() {
     errorEl.classList.add('hidden');
 
     try {
-      await apiCall('/api/auth/signup', 'POST', { name, email, password, department });
+      const resData = await apiCall('/api/auth/signup', 'POST', { name, email, password, department });
       signupEmail = email;
       
       // Navigate to OTP verification card
       document.getElementById('signup-card').classList.add('hidden');
       document.getElementById('otp-card').classList.remove('hidden');
       document.getElementById('otp-email-display').value = email;
-      document.getElementById('otp-code').value = '';
+      
+      // Auto-fill OTP if provided by server (Beta/Demo mode without real email SMTP)
+      if (resData && resData.demoOtp) {
+        document.getElementById('otp-code').value = resData.demoOtp;
+      } else {
+        document.getElementById('otp-code').value = '';
+      }
+      
       document.getElementById('otp-error').classList.add('hidden');
     } catch (err) {
       errorEl.textContent = err.message;
@@ -3605,53 +3617,232 @@ function renderRFQCharts() {
   if (typeof Chart === 'undefined') return;
 
   const rfqs = rfqState.rfqs;
+  const isDark = document.body.classList.contains('dark-theme');
+  const textColor = isDark ? '#cbd5e1' : '#334155';
+  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
 
-  // Status chart
+  Chart.defaults.font.family = "'Inter', 'Outfit', sans-serif";
+  Chart.defaults.color = textColor;
+
+  // ─── 1. Status Donut Chart ───────────────────────────────────────────
   const statusCounts = {};
   RFQ_STATUSES.forEach(s => { statusCounts[s] = rfqs.filter(r => r.status === s).length; });
-  const statusColors = ['#6366f1','#f59e0b','#8b5cf6','#ec4899','#f97316','#10b981','#3b82f6','#22c55e','#ef4444','#6b7280'];
+  const statusColorsMap = {
+    'New': '#6366f1', 'Under Review': '#f59e0b', 'Engineering': '#8b5cf6',
+    'Costing': '#ec4899', 'Waiting for Vendor': '#f97316', 'Quote Ready': '#06b6d4',
+    'Submitted': '#3b82f6', 'Won': '#22c55e', 'Lost': '#ef4444', 'Closed': '#94a3b8'
+  };
+  const statusColors = RFQ_STATUSES.map(s => statusColorsMap[s] || '#6366f1');
+
   if (rfqState.charts.status) rfqState.charts.status.destroy();
   const ctxStatus = document.getElementById('chart-rfq-status')?.getContext('2d');
   if (ctxStatus) {
     rfqState.charts.status = new Chart(ctxStatus, {
       type: 'doughnut',
-      data: { labels: RFQ_STATUSES, datasets: [{ data: Object.values(statusCounts), backgroundColor: statusColors }] },
-      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+      data: {
+        labels: RFQ_STATUSES,
+        datasets: [{
+          data: Object.values(statusCounts),
+          backgroundColor: statusColors,
+          borderColor: isDark ? '#1e293b' : '#ffffff',
+          borderWidth: 3,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '62%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyleWidth: 10, font: { size: 10.5 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = total ? Math.round(ctx.parsed / total * 100) : 0;
+                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
     });
   }
 
-  // Customer chart
+  // ─── 2. Win / Loss Pie Chart ─────────────────────────────────────────
+  const won = rfqs.filter(r => r.status === 'Won').length;
+  const lost = rfqs.filter(r => r.status === 'Lost').length;
+  const inProgress = rfqs.length - won - lost;
+
+  if (rfqState.charts.winrate) rfqState.charts.winrate.destroy();
+  const ctxWin = document.getElementById('chart-rfq-winrate')?.getContext('2d');
+  if (ctxWin) {
+    rfqState.charts.winrate = new Chart(ctxWin, {
+      type: 'doughnut',
+      data: {
+        labels: ['Won', 'Lost', 'In Progress'],
+        datasets: [{
+          data: [won, lost, inProgress],
+          backgroundColor: ['#22c55e', '#ef4444', '#94a3b8'],
+          borderColor: isDark ? '#1e293b' : '#ffffff',
+          borderWidth: 3,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '60%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, font: { size: 10.5 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = total ? Math.round(ctx.parsed / total * 100) : 0;
+                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ─── 3. Priority Breakdown Pie ────────────────────────────────────────
+  const priorities = { High: 0, Medium: 0, Low: 0 };
+  rfqs.forEach(r => { if (r.priority && priorities[r.priority] !== undefined) priorities[r.priority]++; });
+
+  if (rfqState.charts.priority) rfqState.charts.priority.destroy();
+  const ctxPri = document.getElementById('chart-rfq-priority')?.getContext('2d');
+  if (ctxPri) {
+    rfqState.charts.priority = new Chart(ctxPri, {
+      type: 'doughnut',
+      data: {
+        labels: ['High', 'Medium', 'Low'],
+        datasets: [{
+          data: [priorities.High, priorities.Medium, priorities.Low],
+          backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'],
+          borderColor: isDark ? '#1e293b' : '#ffffff',
+          borderWidth: 3,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '60%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, font: { size: 10.5 } } }
+        }
+      }
+    });
+  }
+
+  // ─── 4. Customer Bar Chart (gradient) ────────────────────────────────
   const customerCounts = {};
-  rfqs.forEach(r => {
-    const cust = r.customerName || 'Unknown';
-    customerCounts[cust] = (customerCounts[cust] || 0) + 1;
-  });
+  rfqs.forEach(r => { const c = r.customerName || 'Unknown'; customerCounts[c] = (customerCounts[c] || 0) + 1; });
+  const custLabels = Object.keys(customerCounts).slice(0, 10);
+  const custData = custLabels.map(k => customerCounts[k]);
+
   if (rfqState.charts.customer) rfqState.charts.customer.destroy();
   const ctxCust = document.getElementById('chart-rfq-customer')?.getContext('2d');
   if (ctxCust) {
+    const gradCust = ctxCust.createLinearGradient(0, 0, 0, 200);
+    gradCust.addColorStop(0, 'rgba(99,102,241,0.9)');
+    gradCust.addColorStop(1, 'rgba(99,102,241,0.3)');
     rfqState.charts.customer = new Chart(ctxCust, {
       type: 'bar',
       data: {
-        labels: Object.keys(customerCounts),
-        datasets: [{ label: 'RFQs', data: Object.values(customerCounts), backgroundColor: '#10b981' }]
+        labels: custLabels,
+        datasets: [{ label: 'RFQs', data: custData, backgroundColor: gradCust, borderRadius: 6, borderSkipped: false }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxRotation: 30, font: { size: 10 } } },
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: gridColor } }
+        }
+      }
     });
   }
 
-  // Owner chart
+  // ─── 5. Owner Horizontal Bar ─────────────────────────────────────────
   const ownerCounts = {};
-  rfqs.forEach(r => { const o = r.owner||'Unassigned'; ownerCounts[o] = (ownerCounts[o]||0) + 1; });
+  rfqs.forEach(r => { const o = r.owner || 'Unassigned'; ownerCounts[o] = (ownerCounts[o] || 0) + 1; });
+  const ownerLabels = Object.keys(ownerCounts).slice(0, 8);
+  const ownerData = ownerLabels.map(k => ownerCounts[k]);
+
   if (rfqState.charts.owner) rfqState.charts.owner.destroy();
   const ctxOwner = document.getElementById('chart-rfq-owner')?.getContext('2d');
   if (ctxOwner) {
+    const gradOwner = ctxOwner.createLinearGradient(250, 0, 0, 0);
+    gradOwner.addColorStop(0, 'rgba(16,185,129,0.9)');
+    gradOwner.addColorStop(1, 'rgba(16,185,129,0.3)');
     rfqState.charts.owner = new Chart(ctxOwner, {
       type: 'bar',
       data: {
-        labels: Object.keys(ownerCounts),
-        datasets: [{ label: 'RFQs', data: Object.values(ownerCounts), backgroundColor: '#6366f1' }]
+        labels: ownerLabels,
+        datasets: [{ label: 'RFQs', data: ownerData, backgroundColor: gradOwner, borderRadius: 6, borderSkipped: false }]
       },
-      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: gridColor } },
+          y: { grid: { display: false }, ticks: { font: { size: 10.5 } } }
+        }
+      }
+    });
+  }
+
+  // ─── 6. Monthly Trend Line Chart ─────────────────────────────────────
+  const monthCounts = {};
+  rfqs.forEach(r => {
+    if (r.receivedDate) {
+      const d = new Date(r.receivedDate);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthCounts[key] = (monthCounts[key] || 0) + 1;
+    }
+  });
+  const sortedMonths = Object.keys(monthCounts).sort();
+  const monthLabels = sortedMonths.map(m => {
+    const [yr, mo] = m.split('-');
+    return new Date(yr, mo - 1).toLocaleString('default', { month: 'short', year: '2-digit' });
+  });
+
+  if (rfqState.charts.monthly) rfqState.charts.monthly.destroy();
+  const ctxMonthly = document.getElementById('chart-rfq-monthly')?.getContext('2d');
+  if (ctxMonthly) {
+    const gradLine = ctxMonthly.createLinearGradient(0, 0, 0, 180);
+    gradLine.addColorStop(0, 'rgba(59,130,246,0.35)');
+    gradLine.addColorStop(1, 'rgba(59,130,246,0.01)');
+    rfqState.charts.monthly = new Chart(ctxMonthly, {
+      type: 'line',
+      data: {
+        labels: monthLabels.length ? monthLabels : ['No Data'],
+        datasets: [{
+          label: 'RFQs Received',
+          data: sortedMonths.map(m => monthCounts[m]),
+          borderColor: '#3b82f6',
+          backgroundColor: gradLine,
+          borderWidth: 2.5,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          pointBackgroundColor: '#3b82f6',
+          pointBorderColor: isDark ? '#1e293b' : '#fff',
+          pointBorderWidth: 2,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: gridColor } }
+        }
+      }
     });
   }
 }
@@ -5016,7 +5207,7 @@ function renderPRTable() {
       statusText = 'Pending MD';
     } else if (pr.status === 'approved') {
       statusClass = 'pr-s-approved';
-      statusText = 'Approved';
+      statusText = pr.assignedToName ? `Approved (To: ${pr.assignedToName})` : 'Approved';
     } else if (pr.status === 'rejected') {
       statusClass = 'pr-s-rejected';
       statusText = 'Rejected';
@@ -5117,6 +5308,7 @@ function openPRDetailsModal(prId) {
   // Action box configuration
   const actionBox = document.getElementById('detail-pr-action-box');
   const remarksGroup = document.getElementById('detail-pr-remarks-group');
+  const assigneeGroup = document.getElementById('detail-pr-assignee-group');
   const poGroup = document.getElementById('detail-pr-po-group');
   const btnApprove = document.getElementById('btn-pr-action-approve');
   const btnReject = document.getElementById('btn-pr-action-reject');
@@ -5124,12 +5316,21 @@ function openPRDetailsModal(prId) {
 
   actionBox.style.display = 'none';
   remarksGroup.style.display = 'block';
+  if (assigneeGroup) assigneeGroup.style.display = 'none';
   poGroup.style.display = 'none';
   btnApprove.style.display = 'inline-block';
   btnReject.style.display = 'inline-block';
   btnPO.style.display = 'none';
 
+  const assigneeSelect = document.getElementById('detail-pr-assignee');
+  if (assigneeSelect) {
+    const purchasingUsers = state.users.filter(u => u.department === 'Purchasing');
+    assigneeSelect.innerHTML = '<option value="">-- Any Purchasing Member --</option>' + 
+      purchasingUsers.map(u => `<option value="${escapeHTML(u.name)}">${escapeHTML(u.name)}</option>`).join('');
+  }
+
   document.getElementById('detail-pr-remarks').value = '';
+  if (assigneeSelect) assigneeSelect.value = '';
   document.getElementById('detail-pr-po-number').value = '';
 
   const role = state.currentUser.role;
@@ -5143,6 +5344,7 @@ function openPRDetailsModal(prId) {
     btnReject.onclick = () => handlePRAction('reject', pr.id);
   } else if (pr.status === 'pending_md' && (role === 'md' || isAdmin)) {
     actionBox.style.display = 'block';
+    if (assigneeGroup) assigneeGroup.style.display = 'block';
     document.getElementById('detail-pr-action-title').textContent = 'Perform Level 2 (Managing Director) Action';
     btnApprove.onclick = () => handlePRAction('approve', pr.id);
     btnReject.onclick = () => handlePRAction('reject', pr.id);
@@ -5163,10 +5365,11 @@ function openPRDetailsModal(prId) {
 async function handlePRAction(action, prId) {
   const remarks = document.getElementById('detail-pr-remarks').value;
   const poNumber = document.getElementById('detail-pr-po-number').value;
+  const assignedToName = document.getElementById('detail-pr-assignee')?.value || '';
 
   try {
     if (action === 'approve') {
-      await apiCall(`/api/prs/${prId}/approve`, 'PUT', { remarks });
+      await apiCall(`/api/prs/${prId}/approve`, 'PUT', { remarks, assignedToName });
     } else if (action === 'reject') {
       await apiCall(`/api/prs/${prId}/reject`, 'PUT', { remarks });
     } else if (action === 'po') {

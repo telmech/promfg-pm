@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS purchase_requisitions (
     items_json TEXT NOT NULL DEFAULT '[]',
     ops_head_approval_json TEXT,
     md_approval_json TEXT,
+    assigned_to_name TEXT,
     FOREIGN KEY(org_id) REFERENCES organizations(id),
     FOREIGN KEY(project_id) REFERENCES projects(id),
     FOREIGN KEY(raised_by_id) REFERENCES users(id)

@@ -19,9 +19,9 @@
     <!-- 1. Log In Card -->
     <div id="login-card" class="login-card">
       <div class="login-header">
-        <div class="logo">
-          <div class="dynamic-logo-login-container" style="margin-bottom:8px; max-height:80px; max-width:80px; width:80px; height:80px; display:inline-block; vertical-align: middle;">
-            <img src="/logo.jpg" onerror="this.onerror=null; this.src='/uploads/logo.jpg';" alt="PRO-MFG Logo" style="max-height:100%; max-width:100%; object-fit:contain;">
+        <div class="logo" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; margin-bottom:12px;">
+          <div class="dynamic-logo-login-container" style="display:flex; align-items:center; justify-content:center; margin-bottom:8px; width:100%;">
+            <img src="/logo.jpg" onerror="this.onerror=null; this.src='/uploads/logo.jpg';" alt="PRO-MFG Logo" style="max-height:80px; max-width:240px; object-fit:contain; display:block; margin:0 auto;">
           </div>
           <span class="dynamic-name-login-text" style="display:block; font-size:1.6rem; font-weight:700;">PRO-MFG</span>
         </div>
@@ -48,9 +48,9 @@
     <!-- 2. Sign Up Card -->
     <div id="signup-card" class="login-card hidden">
       <div class="login-header">
-        <div class="logo">
-          <div class="company-logo-login-container" style="margin-bottom:8px; max-height:80px; max-width:80px; width:80px; height:80px; display:inline-block; vertical-align: middle;">
-            <img src="/logo.jpg" onerror="this.onerror=null; this.src='/uploads/logo.jpg';" alt="PRO-MFG Logo" style="max-height:100%; max-width:100%; object-fit:contain;">
+        <div class="logo" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; margin-bottom:12px;">
+          <div class="company-logo-login-container" style="display:flex; align-items:center; justify-content:center; margin-bottom:8px; width:100%;">
+            <img src="/logo.jpg" onerror="this.onerror=null; this.src='/uploads/logo.jpg';" alt="PRO-MFG Logo" style="max-height:80px; max-width:240px; object-fit:contain; display:block; margin:0 auto;">
           </div>
           <span class="company-name-login-text" style="display:block; font-size:1.6rem; font-weight:700;">PRO-MFG</span>
         </div>
@@ -87,9 +87,9 @@
     <!-- 3. OTP Verification Card -->
     <div id="otp-card" class="login-card hidden">
       <div class="login-header">
-        <div class="logo">
-          <div class="company-logo-login-container" style="margin-bottom:8px; max-height:80px; max-width:80px; width:80px; height:80px; display:inline-block; vertical-align: middle;">
-            <img src="/logo.jpg" onerror="this.onerror=null; this.src='/uploads/logo.jpg';" alt="PRO-MFG Logo" style="max-height:100%; max-width:100%; object-fit:contain;">
+        <div class="logo" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; margin-bottom:12px;">
+          <div class="company-logo-login-container" style="display:flex; align-items:center; justify-content:center; margin-bottom:8px; width:100%;">
+            <img src="/logo.jpg" onerror="this.onerror=null; this.src='/uploads/logo.jpg';" alt="PRO-MFG Logo" style="max-height:80px; max-width:240px; object-fit:contain; display:block; margin:0 auto;">
           </div>
           <span class="company-name-login-text" style="display:block; font-size:1.6rem; font-weight:700;">PRO-MFG</span>
         </div>
@@ -233,7 +233,7 @@
         <div class="header-actions">
           <!-- Logged In User Info -->
           <div id="header-user-info" style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-right:12px; display:flex; align-items:center; gap:6px; border-right:1px solid var(--border-color); padding-right:12px;">
-            <span style="opacity:0.75;">Logged in:</span>
+            <span class="header-user-info-label" style="opacity:0.75;">Logged in:</span>
             <span id="header-user-display" style="color:var(--primary-color);">Guest</span>
           </div>
 
@@ -898,19 +898,41 @@
             <div class="rfq-stat-card rfq-due"><div class="rfq-stat-val" id="rfq-stat-due-week">0</div><div class="rfq-stat-label">Due This Week</div></div>
           </div>
 
-          <!-- Charts Row -->
-          <div class="rfq-charts-row">
-            <div class="report-card" style="flex:1; min-width:260px;">
-              <h3>RFQs by Status</h3>
-              <canvas id="chart-rfq-status" height="200"></canvas>
+          <!-- Charts Row - Row 1: Status + Win Rate + Priority -->
+          <div class="rfq-charts-row" style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+            <div class="report-card" style="flex:1.2; min-width:260px; max-width:400px;">
+              <h3 style="margin:0 0 4px 0; font-size:0.95rem;">📊 RFQs by Status</h3>
+              <p style="margin:0 0 12px 0; font-size:0.75rem; color:var(--text-secondary);">Distribution across pipeline stages</p>
+              <canvas id="chart-rfq-status" height="220"></canvas>
             </div>
-            <div class="report-card" style="flex:1; min-width:260px;">
-              <h3>RFQs by Customer</h3>
-              <canvas id="chart-rfq-customer" height="200"></canvas>
+            <div class="report-card" style="flex:1; min-width:220px; max-width:300px;">
+              <h3 style="margin:0 0 4px 0; font-size:0.95rem;">🏆 Win / Loss Rate</h3>
+              <p style="margin:0 0 12px 0; font-size:0.75rem; color:var(--text-secondary);">Closed RFQ outcomes</p>
+              <canvas id="chart-rfq-winrate" height="220"></canvas>
             </div>
-            <div class="report-card" style="flex:1; min-width:260px;">
-              <h3>RFQs by Owner</h3>
-              <canvas id="chart-rfq-owner" height="200"></canvas>
+            <div class="report-card" style="flex:1; min-width:220px; max-width:300px;">
+              <h3 style="margin:0 0 4px 0; font-size:0.95rem;">⚡ Priority Breakdown</h3>
+              <p style="margin:0 0 12px 0; font-size:0.75rem; color:var(--text-secondary);">Open RFQs by urgency level</p>
+              <canvas id="chart-rfq-priority" height="220"></canvas>
+            </div>
+          </div>
+
+          <!-- Charts Row - Row 2: Customer + Owner + Monthly Trend -->
+          <div class="rfq-charts-row" style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+            <div class="report-card" style="flex:1.5; min-width:280px;">
+              <h3 style="margin:0 0 4px 0; font-size:0.95rem;">🏢 RFQs by Customer</h3>
+              <p style="margin:0 0 12px 0; font-size:0.75rem; color:var(--text-secondary);">Volume per customer</p>
+              <canvas id="chart-rfq-customer" height="180"></canvas>
+            </div>
+            <div class="report-card" style="flex:1; min-width:240px;">
+              <h3 style="margin:0 0 4px 0; font-size:0.95rem;">👤 RFQs by Owner</h3>
+              <p style="margin:0 0 12px 0; font-size:0.75rem; color:var(--text-secondary);">Workload per team member</p>
+              <canvas id="chart-rfq-owner" height="180"></canvas>
+            </div>
+            <div class="report-card" style="flex:1.5; min-width:280px;">
+              <h3 style="margin:0 0 4px 0; font-size:0.95rem;">📈 Monthly RFQ Trend</h3>
+              <p style="margin:0 0 12px 0; font-size:0.75rem; color:var(--text-secondary);">RFQs received per month</p>
+              <canvas id="chart-rfq-monthly" height="180"></canvas>
             </div>
           </div>
 
@@ -1880,6 +1902,12 @@
             <label for="detail-pr-remarks">Approval/Rejection Remarks</label>
             <textarea id="detail-pr-remarks" rows="2" style="width:100%;" placeholder="Enter remarks..."></textarea>
           </div>
+          <div id="detail-pr-assignee-group" class="form-group" style="margin-bottom:12px; display:none;">
+            <label for="detail-pr-assignee">Forward to Purchasing Member (Optional)</label>
+            <select id="detail-pr-assignee" style="width:100%;">
+              <option value="">-- Any Purchasing Member --</option>
+            </select>
+          </div>
           
           <!-- PO Input for Purchasing dept -->
           <div id="detail-pr-po-group" class="form-group" style="margin-bottom:12px; display:none;">
@@ -1898,7 +1926,7 @@
   </div>
 
   <!-- ==================== NATIVE-FEEL MOBILE BOTTOM APP NAVIGATION BAR ==================== -->
-  <div id="mobile-bottom-bar" class="mobile-bottom-bar hidden">
+  <div id="mobile-bottom-bar" class="mobile-bottom-bar">
     <a href="#portal" class="mobile-nav-item active" data-target="view-portal">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
       <span>Home</span>

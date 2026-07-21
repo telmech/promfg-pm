@@ -201,6 +201,10 @@ if (!tableExists) {
         db.prepare('INSERT OR IGNORE INTO departments (name, org_id) VALUES (?, ?)').run(dept, ORG_ID);
       }
     })();
+    
+    // Migrations
+    try { db.prepare('ALTER TABLE purchase_requisitions ADD COLUMN assigned_to_name TEXT').run(); } catch(e) {}
+    
     console.log('✓ Database tables and seed data initialized successfully.');
   } else {
     console.error(`schema.sql not found at ${schemaPath}`);
@@ -349,7 +353,8 @@ function mapPR(p) {
     poNumber: p.po_number,
     items: JSON.parse(p.items_json || '[]'),
     opsHeadApproval: p.ops_head_approval_json ? JSON.parse(p.ops_head_approval_json) : null,
-    mdApproval: p.md_approval_json ? JSON.parse(p.md_approval_json) : null
+    mdApproval: p.md_approval_json ? JSON.parse(p.md_approval_json) : null,
+    assignedToName: p.assigned_to_name || null
   };
 }
 
@@ -1063,6 +1068,7 @@ module.exports = {
     if (updates.items !== undefined) { fields.push('items_json = ?'); values.push(JSON.stringify(updates.items)); }
     if (updates.opsHeadApproval !== undefined) { fields.push('ops_head_approval_json = ?'); values.push(JSON.stringify(updates.opsHeadApproval)); }
     if (updates.mdApproval !== undefined) { fields.push('md_approval_json = ?'); values.push(JSON.stringify(updates.mdApproval)); }
+    if (updates.assignedToName !== undefined) { fields.push('assigned_to_name = ?'); values.push(updates.assignedToName); }
 
     if (fields.length > 0) {
       values.push(id);

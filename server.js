@@ -195,7 +195,7 @@ function requirePRAccess(req, res, next) {
   const hasPRPermission = req.user.permissions
     ? req.user.permissions.pr === true
     : true; // Default to true
-  if (isAdmin || hasPRPermission) {
+  if (isAdmin || hasPRPermission || req.user.department === 'Purchasing') {
     return next();
   }
   return res.status(403).json({ error: 'Access denied: You do not have permissions to access PR Tracker.' });
@@ -246,6 +246,7 @@ app.post('/api/auth/login', (req, res) => {
       orgId: user.orgId,
       department: user.department || 'Engineering',
       status: user.status,
+      permissions: user.permissions || {},
       plan: org.plan || 'Free Trial',
       paymentStatus: org.paymentStatus || 'unpaid',
       trialEndsAt: org.trialEndsAt
@@ -284,7 +285,7 @@ app.post('/api/auth/signup', (req, res) => {
     console.log(`Message: Welcome to Antigravity PM! Your 6-digit OTP verification code is: ${otp}`);
     console.log('============================================================\n');
 
-    res.json({ message: 'Office verification OTP generated. Check your corporate inbox.' });
+    res.json({ message: 'Office verification OTP generated. Check your corporate inbox.', demoOtp: otp });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -314,6 +315,7 @@ app.post('/api/auth/verify-otp', (req, res) => {
         orgId: user.orgId,
         department: user.department,
         status: user.status,
+        permissions: user.permissions || {},
         plan: newOrg.plan || 'Free Trial',
         paymentStatus: newOrg.paymentStatus || 'unpaid',
         trialEndsAt: newOrg.trialEndsAt
@@ -335,6 +337,7 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
     orgId: req.user.orgId,
     department: req.user.department || 'Engineering',
     status: req.user.status,
+    permissions: req.user.permissions || {},
     plan: org.plan || 'Free Trial',
     paymentStatus: org.paymentStatus || 'unpaid',
     trialEndsAt: org.trialEndsAt
@@ -1197,7 +1200,7 @@ app.post('/api/prs', authenticateToken, requirePRAccess, (req, res) => {
 });
 
 app.put('/api/prs/:id/approve', authenticateToken, requirePRAccess, (req, res) => {
-  const { remarks } = req.body;
+  const { remarks, assignedToName } = req.body;
   const role = req.user.role;
   const isAdmin = role === 'admin' || role === 'owner' || role === 'superadmin';
 
@@ -1231,6 +1234,7 @@ app.put('/api/prs/:id/approve', authenticateToken, requirePRAccess, (req, res) =
       
       const updated = db.updatePR(req.user.orgId, req.params.id, {
         status: 'approved',
+        assignedToName: assignedToName || null,
         mdApproval: {
           status: 'approved',
           approvedBy: req.user.name,

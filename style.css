@@ -1779,6 +1779,11 @@ h1, h2, h3, h4, h5, h6 {
   background-color: transparent;
 }
 
+/* Mobile bottom bar — hidden by default on desktop, shown via media query on mobile */
+.mobile-bottom-bar {
+  display: none;
+}
+
 /* ==================== RESPONSIVE & MOBILE OVERHAUL ==================== */
 @media (max-width: 992px) {
   .dashboard-details-grid,
@@ -1908,35 +1913,82 @@ h1, h2, h3, h4, h5, h6 {
     color: #ffffff !important;
   }
 
-  .sidebar-footer {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 8px 16px !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  }
   .powered-by-promfg {
     display: none !important;
   }
 
-  /* Header & Viewport Container */
+  /* Ultra-Clean Mobile Header Layout */
   .app-header {
-    padding: 12px 16px !important;
-    flex-wrap: wrap !important;
-    gap: 10px !important;
+    padding: 10px 14px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    min-height: 56px !important;
+  }
+
+  .app-header > div:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .app-header h1#view-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .app-header > div:first-child span {
+    display: none !important; /* Hide long subtitle on mobile screens */
   }
 
   .header-actions {
-    width: 100% !important;
-    justify-content: space-between !important;
+    width: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    flex-shrink: 0 !important;
   }
 
-  .viewport-container {
-    padding: 12px !important;
-    height: auto !important;
-    overflow-y: visible !important;
+  #header-user-info {
+    margin-right: 0 !important;
+    padding-right: 6px !important;
+    border-right: none !important;
+    font-size: 0.72rem !important;
+    max-width: 120px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    padding: 4px 8px !important;
+    border-radius: 12px !important;
   }
+
+  .header-user-info-label {
+    display: none !important; /* Hide "Logged in:" label on mobile screens */
+  }
+
+  #theme-toggle,
+  #btn-notifications {
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+
 
   /* Responsive Metric Cards */
   .rfq-stats-container,
