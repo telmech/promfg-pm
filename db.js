@@ -3,9 +3,11 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 
+const dataDir = process.env.DATA_DIR || __dirname;
+
 const dbFile = process.env.NODE_ENV === 'test'
   ? path.join(__dirname, 'database.test.sqlite')
-  : path.join(__dirname, 'database.sqlite');
+  : path.join(dataDir, 'database.sqlite');
 
 // Auto delete existing test database on test startup to ensure fresh test runs
 if (process.env.NODE_ENV === 'test' && fs.existsSync(dbFile)) {
@@ -342,7 +344,7 @@ module.exports = {
     const permissions = user.permissions || {
       projects: true,
       bom: department === 'Purchasing',
-      rfq: user.role === 'admin' || user.role === 'owner' || user.role === 'project_manager',
+      rfq: user.role === 'admin' || user.role === 'owner' || user.role === 'project_manager' || user.role === 'department_head',
       pr: true
     };
 
