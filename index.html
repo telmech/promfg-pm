@@ -1045,8 +1045,12 @@
                 <canvas id="chart-report-1" height="150"></canvas>
               </div>
               <div class="report-card" style="flex:1; min-width:320px; background:var(--card-bg); border:1px solid var(--border-color); padding:20px; border-radius:var(--radius-md);">
-                <h3 id="report-chart-title-2" style="margin-top:0; margin-bottom:16px; font-size:1rem; font-weight:600; color:var(--text-primary);">Volume Analysis</h3>
+                <h3 id="report-chart-title-2" style="margin-top:0; margin-bottom:16px; font-size:1rem; font-weight:600; color:var(--text-primary);">Volume by Designation</h3>
                 <canvas id="chart-report-2" height="150"></canvas>
+              </div>
+              <div class="report-card" style="flex:1; min-width:320px; background:var(--card-bg); border:1px solid var(--border-color); padding:20px; border-radius:var(--radius-md);">
+                <h3 id="report-chart-title-3" style="margin-top:0; margin-bottom:16px; font-size:1rem; font-weight:600; color:var(--text-primary);">Volume by Member</h3>
+                <canvas id="chart-report-3" height="150"></canvas>
               </div>
             </div>
 
@@ -1264,6 +1268,7 @@
             <label for="user-role">Role</label>
             <select id="user-role">
               <option value="member" selected>Member (Employee)</option>
+              <option value="department_head">Department Head</option>
               <option value="project_manager">Project Manager</option>
               <option value="operations_head">Operations Head</option>
               <option value="md">MD (Managing Director)</option>

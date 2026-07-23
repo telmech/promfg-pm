@@ -319,7 +319,8 @@ function showApp() {
   const isOwner = (role === 'owner');
   const isAdmin = (role === 'admin' || isOwner || role === 'superadmin');
   const isPM = (role === 'project_manager');
-  const isManager = (isAdmin || isPM);
+  const isDeptHead = (role === 'department_head');
+  const isManager = (isAdmin || isPM || isDeptHead);
 
   // Hide/Show Admin features (Super Admin / Admin only)
   if (isAdmin) {
@@ -1412,10 +1413,11 @@ function renderTeam() {
     const isTargetSuperAdmin = user.role === 'admin';
     const isTargetAdmin = user.role === 'admin';
     
-    // SuperAdmin manages everyone. Admin manages Admin/PM/Members. PM manages PM/Members.
+    // SuperAdmin manages everyone. Admin manages Admin/PM/Members. PM manages PM/Members. DeptHead manages their own dept.
     const canManageUser = isSuperAdmin || 
                          (isAdmin && !isTargetSuperAdmin) || 
-                         (isPM && !isTargetSuperAdmin && !isTargetAdmin && !isSelf);
+                         (isPM && !isTargetSuperAdmin && !isTargetAdmin && !isSelf) ||
+                         (isDeptHead && user.department === state.currentUser.department && !isTargetSuperAdmin && !isTargetAdmin);
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -1843,6 +1845,22 @@ function openUserFormModal(userId = null) {
   state.departments.forEach(d => {
     deptSelect.innerHTML += `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`;
   });
+  
+  const roleSelect = document.getElementById('user-role');
+  Array.from(roleSelect.options).forEach(opt => opt.disabled = false);
+
+  if (state.currentUser.role === 'department_head') {
+    deptSelect.value = state.currentUser.department;
+    deptSelect.disabled = true; // Lock to their department
+    // Disable admin roles for Dept Head
+    Array.from(roleSelect.options).forEach(opt => {
+      if (['admin', 'superadmin', 'owner', 'project_manager', 'md'].includes(opt.value)) {
+        opt.disabled = true;
+      }
+    });
+  } else {
+    deptSelect.disabled = false;
+  }
 
   if (userId) {
     document.getElementById('user-modal-title').textContent = 'Edit User Settings';
@@ -2804,7 +2822,10 @@ function setupEventListeners() {
     const name = document.getElementById('user-name').value;
     const email = document.getElementById('user-email').value;
     const password = document.getElementById('user-password').value;
-    const department = document.getElementById('user-dept').value;
+    let department = document.getElementById('user-dept').value;
+    if (state.currentUser.role === 'department_head') {
+      department = state.currentUser.department; // enforce localized department
+    }
     const role = document.getElementById('user-role').value;
     const status = document.getElementById('user-status').value;
     
@@ -4501,6 +4522,30 @@ function renderTaskReportCharts(filtered) {
       options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
     });
   }
+
+  // Chart 3: Workload by Member
+  const memberHours = {};
+  filtered.forEach(t => {
+    const member = t.allocatedOperator || 'Unassigned';
+    memberHours[member] = (memberHours[member] || 0) + (parseFloat(t.mappedDuration) || 0);
+  });
+
+  if (reportCharts.c3) reportCharts.c3.destroy();
+  const ctx3 = document.getElementById('chart-report-3')?.getContext('2d');
+  if (ctx3) {
+    reportCharts.c3 = new Chart(ctx3, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(memberHours),
+        datasets: [{
+          label: 'Total Mapped Hours',
+          data: Object.values(memberHours),
+          backgroundColor: '#06b6d4'
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+  }
 }
 
 // EXPORT PERFORMANCE REPORT TO EXCEL CSV
@@ -4596,12 +4641,14 @@ function printReportPDF() {
   }
 
   // Get base64 images of charts
-  const chartImg1 = document.getElementById('chart-report-1')?.toDataURL('image/png') || '';
-  const chartImg2 = document.getElementById('chart-report-2')?.toDataURL('image/png') || '';
+  const chartImg1 = document.getElementById('chart-report-1')?.toDataURL('image/png');
+  const chartImg2 = document.getElementById('chart-report-2')?.toDataURL('image/png');
+  const chartImg3 = document.getElementById('chart-report-3')?.toDataURL('image/png');
 
-  const chartsHtml = (chartImg1 || chartImg2) ? '<div style="display:flex; justify-content:space-around; margin-bottom:40px; margin-top:20px;">' +
-    (chartImg1 ? '<div style="text-align:center;"><h4 style="margin-bottom:8px;">Status Distribution</h4><img src="' + chartImg1 + '" style="max-height:160px; max-width:300px; object-fit:contain;"></div>' : '') +
-    (chartImg2 ? '<div style="text-align:center;"><h4 style="margin-bottom:8px;">Workload / Volume Analysis</h4><img src="' + chartImg2 + '" style="max-height:160px; max-width:300px; object-fit:contain;"></div>' : '') +
+  const chartsHtml = (chartImg1 || chartImg2 || chartImg3) ? '<div style="display:flex; justify-content:space-around; margin-bottom:40px; margin-top:20px;">' +
+    (chartImg1 ? '<div style="text-align:center;"><h4 style="margin-bottom:8px;">Status Distribution</h4><img src="' + chartImg1 + '" style="max-height:160px; max-width:250px; object-fit:contain;"></div>' : '') +
+    (chartImg2 ? '<div style="text-align:center;"><h4 style="margin-bottom:8px;">Workload / Designation</h4><img src="' + chartImg2 + '" style="max-height:160px; max-width:250px; object-fit:contain;"></div>' : '') +
+    (chartImg3 ? '<div style="text-align:center;"><h4 style="margin-bottom:8px;">Workload / Member</h4><img src="' + chartImg3 + '" style="max-height:160px; max-width:250px; object-fit:contain;"></div>' : '') +
     '</div>' : '';
 
   printWindow.document.write('<html><head><title>' + reportTitle + ' - ' + generatedReportData.periodLabel + '</title>' +

@@ -136,11 +136,11 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-// User Management Authorization (Super Admin / Admin / PM can add and edit users)
+// User Management Authorization (Super Admin / Admin / PM / Dept Head can add and edit users)
 function requireUserManagementRights(req, res, next) {
   const role = req.user.role;
-  if (role !== 'admin' && role !== 'owner' && role !== 'project_manager') {
-    return res.status(403).json({ error: 'Access denied: Super Admin, Admin, or PM permissions required.' });
+  if (role !== 'admin' && role !== 'owner' && role !== 'project_manager' && role !== 'department_head') {
+    return res.status(403).json({ error: 'Access denied: Super Admin, Admin, PM, or Dept Head permissions required.' });
   }
   next();
 }
@@ -154,11 +154,11 @@ function requireAdminPMOrSuperAdmin(req, res, next) {
   next();
 }
 
-// Strict Admin/Super Admin for deletions
+// Strict Admin/Super Admin/Dept Head for deletions
 function requireDeletionRights(req, res, next) {
   const role = req.user.role;
-  if (role !== 'admin' && role !== 'owner') {
-    return res.status(403).json({ error: 'Access denied: Only Super Admin or Admin can delete projects/users.' });
+  if (role !== 'admin' && role !== 'owner' && role !== 'department_head') {
+    return res.status(403).json({ error: 'Access denied: Only Super Admin, Admin, or Dept Head can delete.' });
   }
   next();
 }
@@ -355,9 +355,16 @@ app.get('/api/users', authenticateToken, (req, res) => {
 });
 
 app.post('/api/users', authenticateToken, requireUserManagementRights, (req, res) => {
-  const { name, email, password, role, department, status, permissions } = req.body;
+  let { name, email, password, role, department, status, permissions } = req.body;
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'All fields are required.' });
+  }
+  
+  if (req.user.role === 'department_head') {
+    department = req.user.department; // Force their own department
+    if (role === 'admin' || role === 'owner' || role === 'superadmin' || role === 'project_manager') {
+      return res.status(403).json({ error: 'Department Heads cannot assign Admin or PM roles.' });
+    }
   }
 
   try {
@@ -379,8 +386,18 @@ app.post('/api/users', authenticateToken, requireUserManagementRights, (req, res
 });
 
 app.put('/api/users/:id', authenticateToken, requireUserManagementRights, (req, res) => {
-  const { name, email, password, role, department, status, permissions } = req.body;
+  let { name, email, password, role, department, status, permissions } = req.body;
   try {
+    const targetUser = db.getUsers(req.user.orgId).find(u => u.id === req.params.id);
+    if (req.user.role === 'department_head') {
+      if (!targetUser || targetUser.department !== req.user.department) {
+        return res.status(403).json({ error: 'Department Heads can only edit users in their own department.' });
+      }
+      department = req.user.department; // Force maintain department
+      if (role === 'admin' || role === 'owner' || role === 'superadmin' || role === 'project_manager') {
+        return res.status(403).json({ error: 'Department Heads cannot assign Admin or PM roles.' });
+      }
+    }
     const updates = {};
     if (name !== undefined) updates.name = name;
     if (email !== undefined) updates.email = email;
@@ -401,6 +418,10 @@ app.put('/api/users/:id', authenticateToken, requireUserManagementRights, (req, 
 app.delete('/api/users/:id', authenticateToken, requireUserManagementRights, requireDeletionRights, (req, res) => {
   if (req.params.id === req.user.id) {
     return res.status(400).json({ error: 'You cannot delete your own account.' });
+  }
+  const targetUser = db.getUsers(req.user.orgId).find(u => u.id === req.params.id);
+  if (req.user.role === 'department_head' && (!targetUser || targetUser.department !== req.user.department)) {
+    return res.status(403).json({ error: 'Access denied: Cannot delete users outside your department.' });
   }
   try {
     db.deleteUser(req.user.orgId, req.params.id);
@@ -732,7 +753,7 @@ app.delete('/api/tasks/:id', authenticateToken, requireProjectAccess, (req, res)
   if (!currentTask) return res.status(404).json({ error: 'Task not found.' });
 
   const role = req.user.role;
-  const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager');
+  const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager' || role === 'department_head');
   const isCreator = currentTask.createdBy === req.user.id;
 
   if (!isManager && !isCreator) {
@@ -794,7 +815,7 @@ app.post('/api/tasks/:taskId/comments', authenticateToken, (req, res) => {
       text
     });
 
-    const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager');
+    const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager' || role === 'department_head');
     if (isManager && task.assigneeId) {
       db.createNotification(req.user.orgId, {
         userId: task.assigneeId,
@@ -1032,6 +1053,10 @@ app.post('/api/org/checkout', authenticateToken, (req, res) => {
 // Admin Approve / Deny users
 app.post('/api/users/:id/approve', authenticateToken, requireUserManagementRights, (req, res) => {
   try {
+    const targetUser = db.getUsers(req.user.orgId).find(u => u.id === req.params.id);
+    if (req.user.role === 'department_head' && (!targetUser || targetUser.department !== req.user.department)) {
+      return res.status(403).json({ error: 'Access denied: Cannot approve outside your department.' });
+    }
     const updated = db.updateUser(req.user.orgId, req.params.id, { status: 'active' });
     const { password: _, ...safe } = updated;
     res.json({ message: 'User approved', user: safe });
@@ -1042,6 +1067,10 @@ app.post('/api/users/:id/approve', authenticateToken, requireUserManagementRight
 
 app.post('/api/users/:id/deny', authenticateToken, requireUserManagementRights, (req, res) => {
   try {
+    const targetUser = db.getUsers(req.user.orgId).find(u => u.id === req.params.id);
+    if (req.user.role === 'department_head' && (!targetUser || targetUser.department !== req.user.department)) {
+      return res.status(403).json({ error: 'Access denied: Cannot deny outside your department.' });
+    }
     const updated = db.updateUser(req.user.orgId, req.params.id, { status: 'deactivated' });
     const { password: _, ...safe } = updated;
     res.json({ message: 'User denied', user: safe });
