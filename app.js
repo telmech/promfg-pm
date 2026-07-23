@@ -1013,6 +1013,20 @@ function renderProjectTimeline(projectId) {
               localTimeline[idx].endDate = endVal;
               localTimeline[idx].duration = durVal;
             } else {
+              // Auto-fill dates based on previous milestone or today
+              let startDate = new Date();
+              if (idx > 0 && localTimeline[idx-1].endDate) {
+                // If previous milestone has an end date, start on the same date (or next day, but same day is standard for continuous flow)
+                startDate = new Date(localTimeline[idx-1].endDate);
+              }
+              const startStr = startDate.toISOString().split('T')[0];
+              const endDate = new Date(startDate.getTime() + (durVal - 1) * oneDay);
+              const endStr = endDate.toISOString().split('T')[0];
+              
+              startInput.value = startStr;
+              endInput.value = endStr;
+              localTimeline[idx].startDate = startStr;
+              localTimeline[idx].endDate = endStr;
               localTimeline[idx].duration = durVal;
             }
           } else {
