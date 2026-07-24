@@ -5,6 +5,11 @@ const fs = require('fs');
 
 const dataDir = process.env.DATA_DIR || __dirname;
 
+// Ensure the data directory exists (critical for Render Persistent Disk)
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
 const dbFile = process.env.NODE_ENV === 'test'
   ? path.join(__dirname, 'database.test.sqlite')
   : path.join(dataDir, 'database.sqlite');
