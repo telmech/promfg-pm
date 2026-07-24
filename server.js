@@ -216,8 +216,12 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid email or password.' });
   }
 
+  if (user.status === 'pending_approval') {
+    return res.status(403).json({ error: 'Your account is pending Super Admin approval. You will be notified once access is granted.' });
+  }
+
   if (user.status !== 'active') {
-    return res.status(403).json({ error: 'This account is deactivated.' });
+    return res.status(403).json({ error: 'This account has been deactivated. Please contact your administrator.' });
   }
 
   const bcrypt = require('bcryptjs');
@@ -986,6 +990,72 @@ app.get('/api/owner/metrics', authenticateToken, requireOwnerRights, (req, res) 
 
 app.get('/api/owner/organizations', authenticateToken, requireOwnerRights, (req, res) => {
   res.json(db.getAllOrganizations());
+});
+
+// Get all pending signup organizations
+app.get('/api/owner/pending-signups', authenticateToken, requireOwnerRights, (req, res) => {
+  try {
+    const orgs = db.getAllOrganizations().filter(o => o.status === 'pending_approval');
+    const result = orgs.map(org => {
+      const users = db.getAllUsersAllOrgs().filter(u => u.orgId === org.id);
+      const admin = users.find(u => u.role === 'admin') || users[0];
+      return {
+        orgId: org.id,
+        orgName: org.name,
+        plan: org.plan,
+        createdAt: org.created_at,
+        adminName: admin ? admin.name : 'Unknown',
+        adminEmail: admin ? admin.email : 'Unknown',
+        userCount: users.length
+      };
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Approve a pending organization — activate org and its admin
+app.post('/api/owner/approve-org/:orgId', authenticateToken, requireOwnerRights, (req, res) => {
+  try {
+    const orgId = req.params.orgId;
+    const org = db.getOrganizationById(orgId);
+    if (!org) return res.status(404).json({ error: 'Organization not found.' });
+
+    db.updateOrganization(orgId, { status: 'active' });
+
+    // Activate all users in this org
+    const users = db.getAllUsersAllOrgs().filter(u => u.orgId === orgId);
+    users.forEach(u => {
+      db.updateUser(orgId, u.id, { status: 'active' });
+    });
+
+    console.log(`[AUDIT] Owner approved organization ${orgId} at ${new Date().toISOString()}`);
+    res.json({ message: `Organization approved successfully. ${users.length} user(s) can now log in.` });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Reject and remove a pending organization
+app.post('/api/owner/reject-org/:orgId', authenticateToken, requireOwnerRights, (req, res) => {
+  try {
+    const orgId = req.params.orgId;
+    const org = db.getOrganizationById(orgId);
+    if (!org) return res.status(404).json({ error: 'Organization not found.' });
+
+    // Set org and all its users to rejected/deactivated
+    db.updateOrganization(orgId, { status: 'rejected' });
+    const users = db.getAllUsersAllOrgs().filter(u => u.orgId === orgId);
+    users.forEach(u => {
+      db.updateUser(orgId, u.id, { status: 'deactivated' });
+    });
+
+    console.log(`[AUDIT] Owner rejected organization ${orgId} at ${new Date().toISOString()}`);
+    res.json({ message: 'Organization rejected and blocked.' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 app.put('/api/owner/organizations/:id', authenticateToken, requireOwnerRights, (req, res) => {

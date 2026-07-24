@@ -2630,3 +2630,529 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 
+/* ==================== COMPREHENSIVE MOBILE OVERHAUL ==================== */
+
+/* ---- Tablet: 768px - 992px ---- */
+@media (max-width: 992px) {
+  .dashboard-details-grid,
+  .reports-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .report-card.full-width {
+    grid-column: span 1 !important;
+  }
+  .rfq-stats-container,
+  .bom-stats-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Pricing modal: 2 columns on tablet */
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  /* Portal cards: 2 columns on tablet */
+  .portal-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+
+/* ---- Mobile: max 768px ---- */
+@media (max-width: 768px) {
+
+  /* === FOUNDATIONS === */
+  body {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: auto !important;
+  }
+
+  .app-container {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    width: 100% !important;
+  }
+
+  .main-content {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+  }
+
+  .viewport-container {
+    height: auto !important;
+    overflow: visible !important;
+    padding: 12px 10px 90px 10px !important;
+  }
+
+  /* === SIDEBAR — Hidden on mobile, replaced by bottom bar === */
+  .sidebar {
+    width: 100% !important;
+    height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 16px !important;
+    min-height: unset !important;
+  }
+
+  .sidebar-nav,
+  .sidebar-footer,
+  .sidebar-logo-text,
+  .powered-by-promfg {
+    display: none !important;
+  }
+
+  .sidebar-header {
+    padding: 0 !important;
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    flex: 1 !important;
+  }
+
+  /* === BOTTOM NAVIGATION BAR === */
+  .mobile-bottom-bar {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 64px !important;
+    background: #0f172a !important;
+    border-top: 1px solid #1e293b !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35) !important;
+    z-index: 9999 !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    padding: 0 4px !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+
+  .mobile-nav-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #94a3b8 !important;
+    text-decoration: none !important;
+    font-size: 0.62rem !important;
+    font-weight: 600 !important;
+    padding: 6px 8px !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+    gap: 3px !important;
+    min-width: 48px !important;
+  }
+
+  .mobile-nav-item.active {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.15) !important;
+  }
+
+  .mobile-nav-item svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  /* === TOP HEADER === */
+  .app-header {
+    padding: 10px 14px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    min-height: 56px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+  }
+
+  .app-header h1#view-title {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 160px !important;
+  }
+
+  .app-header > div:first-child span {
+    display: none !important;
+  }
+
+  .header-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  #header-user-info {
+    font-size: 0.7rem !important;
+    max-width: 100px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding: 4px 8px !important;
+    border-radius: 12px !important;
+    background: rgba(255,255,255,0.05) !important;
+    border-right: none !important;
+    margin-right: 0 !important;
+  }
+
+  .header-user-info-label { display: none !important; }
+
+  #theme-toggle,
+  #btn-notifications {
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 6px !important;
+    flex-shrink: 0 !important;
+    border-radius: 10px !important;
+  }
+
+  /* === LOGIN CARD === */
+  .login-container {
+    padding: 16px 12px !important;
+    align-items: flex-start !important;
+  }
+
+  .login-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 28px 20px !important;
+    border-radius: 20px !important;
+    margin: 8px 0 !important;
+  }
+
+  .login-card input,
+  .login-card select,
+  .login-card button {
+    font-size: 16px !important;
+    min-height: 48px !important;
+  }
+
+  /* === METRIC CARDS === */
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .metric-card {
+    padding: 14px 12px !important;
+  }
+
+  .metric-value {
+    font-size: 1.6rem !important;
+  }
+
+  .rfq-stats-container,
+  .bom-stats-container,
+  .portal-dashboard-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* === PORTAL CARDS === */
+  .portal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    padding: 8px 0 80px !important;
+  }
+
+  .portal-card {
+    padding: 20px 18px !important;
+  }
+
+  /* === TABLES — Horizontal scroll === */
+  .rfq-table-wrap,
+  .bom-table-wrap,
+  .table-responsive,
+  .table-container,
+  .timeline-table-wrap,
+  .task-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px !important;
+    margin-top: 10px !important;
+    max-width: 100vw !important;
+  }
+
+  /* Add scroll indicator hint */
+  .rfq-table-wrap::after,
+  .bom-table-wrap::after {
+    content: '← Scroll to see more →';
+    display: block;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    padding: 6px;
+    opacity: 0.7;
+  }
+
+  table {
+    min-width: 600px !important;
+  }
+
+  .rfq-table {
+    min-width: 1000px !important;
+  }
+
+  .data-table {
+    font-size: 0.8rem !important;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 10px !important;
+  }
+
+  /* === ACTION BARS & FILTERS === */
+  .rfq-filter-bar,
+  .projects-header,
+  .viewport-header,
+  .bom-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .rfq-filter-bar > *,
+  .projects-header > * {
+    width: 100% !important;
+  }
+
+  .rfq-search-input,
+  .rfq-filter-select {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+
+  /* === BUTTONS === */
+  .btn {
+    min-height: 44px !important;
+    font-size: 0.88rem !important;
+    padding: 10px 16px !important;
+  }
+
+  .btn-sm {
+    min-height: 36px !important;
+    font-size: 0.8rem !important;
+    padding: 6px 12px !important;
+  }
+
+  /* === KANBAN BOARD === */
+  .kanban-board {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    height: auto !important;
+  }
+
+  .kanban-column {
+    max-height: 420px !important;
+    min-height: 180px !important;
+  }
+
+  .kanban-card {
+    padding: 12px !important;
+  }
+
+  /* === MODALS === */
+  .modal-content {
+    width: 96% !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    padding: 16px 14px !important;
+    margin: 16px auto !important;
+    border-radius: 20px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .modal-large .modal-content,
+  .modal-xl .modal-content {
+    width: 98% !important;
+    max-height: 95vh !important;
+    padding: 14px 12px !important;
+  }
+
+  .modal-body-details {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .details-right {
+    border-left: none !important;
+    border-top: 1px solid var(--border-color) !important;
+    padding-left: 0 !important;
+    padding-top: 16px !important;
+  }
+
+  .modal-header {
+    padding-bottom: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .modal-header h2,
+  .modal-header h3 {
+    font-size: 1.1rem !important;
+  }
+
+  /* Form inputs inside modal */
+  .modal-content input,
+  .modal-content select,
+  .modal-content textarea {
+    font-size: 16px !important;
+    min-height: 44px !important;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* === GANTT & TIMELINE === */
+  .gantt-grid,
+  .gantt-header-row {
+    grid-template-columns: 90px 1fr !important;
+  }
+
+  .timeline-editor-table {
+    min-width: 700px !important;
+  }
+
+  .gantt-stage-name {
+    font-size: 0.7rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* === PRICING MODAL === */
+  .pricing-modal-content {
+    max-width: 100% !important;
+    padding: 20px 14px !important;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .pricing-header h1 {
+    font-size: 1.6rem !important;
+  }
+
+  .billing-toggle-container {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* === DASHBOARD DETAILS === */
+  .dashboard-details-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* === PROJECTS GRID === */
+  .projects-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* === REPORTS === */
+  .reports-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .report-card {
+    padding: 16px 14px !important;
+  }
+
+  /* === TEAM TABLE === */
+  .team-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* === RFQ CHART ROW === */
+  .rfq-charts-row {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .rfq-charts-row > * {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+
+  /* === STAT CARDS === */
+  .rfq-stat-card {
+    padding: 12px 10px !important;
+  }
+
+  .rfq-stat-val {
+    font-size: 1.4rem !important;
+  }
+
+  .rfq-stat-label {
+    font-size: 0.68rem !important;
+  }
+
+  /* === SECTION HEADERS === */
+  .viewport-section h2,
+  .section-title {
+    font-size: 1rem !important;
+  }
+
+  /* === SAFE AREA FOR NOTCH PHONES (iOS) === */
+  .mobile-bottom-bar {
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ---- Extra Small: max 420px ---- */
+@media (max-width: 420px) {
+  .metrics-grid,
+  .rfq-stats-container,
+  .bom-stats-container {
+    grid-template-columns: 1fr !important;
+  }
+
+  .app-header h1#view-title {
+    font-size: 1rem !important;
+    max-width: 120px !important;
+  }
+
+  #header-user-info {
+    display: none !important;
+  }
+
+  .mobile-nav-item {
+    font-size: 0.58rem !important;
+    padding: 4px 6px !important;
+    min-width: 40px !important;
+  }
+
+  .login-card {
+    padding: 24px 16px !important;
+  }
+
+  .modal-content {
+    padding: 14px 10px !important;
+    border-radius: 16px !important;
+  }
+
+  .btn {
+    font-size: 0.82rem !important;
+    padding: 10px 12px !important;
+  }
+}

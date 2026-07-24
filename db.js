@@ -19,6 +19,26 @@ const db = new Database(dbFile);
 // Enable WAL mode for performance and concurrent readers
 db.pragma('journal_mode = WAL');
 
+// Automatic Schema Migration: Add missing columns to tasks table if they don't exist
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(tasks)").all();
+  const columns = tableInfo.map(c => c.name);
+  if (!columns.includes('start_date')) {
+    db.prepare("ALTER TABLE tasks ADD COLUMN start_date TEXT").run();
+  }
+  if (!columns.includes('allocated_operator')) {
+    db.prepare("ALTER TABLE tasks ADD COLUMN allocated_operator TEXT").run();
+  }
+  if (!columns.includes('operator_role')) {
+    db.prepare("ALTER TABLE tasks ADD COLUMN operator_role TEXT").run();
+  }
+  if (!columns.includes('mapped_duration')) {
+    db.prepare("ALTER TABLE tasks ADD COLUMN mapped_duration REAL").run();
+  }
+} catch (err) {
+  console.error("Migration error:", err.message);
+}
+
 // Self-initialization checking & seeding
 const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
 if (!tableExists) {
@@ -186,6 +206,10 @@ function mapTask(t) {
     priority: t.priority,
     status: t.status,
     dueDate: t.due_date,
+    startDate: t.start_date || '',
+    allocatedOperator: t.allocated_operator || '',
+    operatorRole: t.operator_role || '',
+    mappedDuration: t.mapped_duration || 0,
     createdBy: t.created_by,
     createdAt: t.created_at,
     attachments: JSON.parse(t.attachments_json || '[]')
@@ -662,7 +686,7 @@ module.exports = {
       newOrgId,
       signup.name + "'s Workspace",
       'Free Trial',
-      'active',
+      'pending_approval',
       0,
       new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
       'unpaid',
@@ -713,7 +737,7 @@ module.exports = {
       passwordHash,
       'admin', // first user is admin
       'Management',
-      'active',
+      'pending_approval',
       new Date().toISOString(),
       JSON.stringify({ projects: true, bom: true, rfq: true, pr: true })
     );

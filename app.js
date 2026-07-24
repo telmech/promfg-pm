@@ -5190,7 +5190,111 @@ function renderPortal() {
   companyPortalTexts.forEach(el => {
     el.textContent = compName;
   });
+
+  // Owner-only: Load Pending Signups Panel
+  if (isOwner) {
+    renderPendingSignupsPanel();
+  }
 }
+
+async function renderPendingSignupsPanel() {
+  // Create or find the pending signups container
+  let panel = document.getElementById('pending-signups-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'pending-signups-panel';
+    panel.style.cssText = `
+      margin: 32px auto; max-width: 900px; background: var(--card-bg, #fff);
+      border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      border: 2px solid #f59e0b; overflow: hidden;
+    `;
+    // Insert after portal welcome section
+    const portalView = document.getElementById('portal-view') || document.getElementById('view-portal');
+    if (portalView) portalView.appendChild(panel);
+  }
+
+  panel.innerHTML = `
+    <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:20px 28px;display:flex;align-items:center;gap:16px;">
+      <span style="font-size:28px;">🕐</span>
+      <div>
+        <h3 style="color:#fff;margin:0;font-size:18px;font-weight:700;">Pending Company Approvals</h3>
+        <p style="color:rgba(255,255,255,0.85);margin:0;font-size:13px;">Companies waiting for your manual access approval</p>
+      </div>
+      <span id="pending-count-badge" style="margin-left:auto;background:#fff;color:#d97706;border-radius:999px;padding:4px 14px;font-weight:800;font-size:16px;">...</span>
+    </div>
+    <div id="pending-signups-list" style="padding:24px;">
+      <p style="color:#888;text-align:center;">Loading...</p>
+    </div>
+  `;
+
+  try {
+    const pending = await apiCall('/api/owner/pending-signups');
+    const badge = document.getElementById('pending-count-badge');
+    if (badge) badge.textContent = pending.length;
+
+    const list = document.getElementById('pending-signups-list');
+    if (!list) return;
+
+    if (pending.length === 0) {
+      list.innerHTML = `<p style="text-align:center;color:#888;padding:16px;">✅ No pending approvals. All companies are approved.</p>`;
+      return;
+    }
+
+    list.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid #f3f4f6;">
+            <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b7280;text-transform:uppercase;">Company</th>
+            <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b7280;text-transform:uppercase;">Admin Name</th>
+            <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b7280;text-transform:uppercase;">Admin Email</th>
+            <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b7280;text-transform:uppercase;">Signed Up</th>
+            <th style="text-align:center;padding:10px 8px;font-size:12px;color:#6b7280;text-transform:uppercase;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pending.map(p => `
+            <tr style="border-bottom:1px solid #f3f4f6;" id="pending-row-${p.orgId}">
+              <td style="padding:14px 8px;font-weight:600;">${escapeHTML(p.orgName)}</td>
+              <td style="padding:14px 8px;">${escapeHTML(p.adminName)}</td>
+              <td style="padding:14px 8px;color:#6b7280;">${escapeHTML(p.adminEmail)}</td>
+              <td style="padding:14px 8px;color:#6b7280;font-size:13px;">${new Date(p.createdAt).toLocaleDateString()}</td>
+              <td style="padding:14px 8px;text-align:center;">
+                <button onclick="approveOrg('${p.orgId}')" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer;margin-right:8px;">✅ Approve</button>
+                <button onclick="rejectOrg('${p.orgId}')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer;">❌ Reject</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    const list = document.getElementById('pending-signups-list');
+    if (list) list.innerHTML = `<p style="color:red;text-align:center;">Error loading pending signups: ${err.message}</p>`;
+  }
+}
+
+async function approveOrg(orgId) {
+  if (!confirm('Approve this company? Their admin will be able to log in and add their team.')) return;
+  try {
+    const res = await apiCall(`/api/owner/approve-org/${orgId}`, 'POST');
+    alert('✅ ' + res.message);
+    renderPendingSignupsPanel();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+async function rejectOrg(orgId) {
+  if (!confirm('Reject and permanently block this company? This cannot be undone.')) return;
+  try {
+    const res = await apiCall(`/api/owner/reject-org/${orgId}`, 'POST');
+    alert('❌ ' + res.message);
+    renderPendingSignupsPanel();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
 
 
 // ==================== PURCHASE REQUISITIONS (PR) TRACKING ====================
