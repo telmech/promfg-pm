@@ -3,11 +3,18 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 
-const dataDir = process.env.DATA_DIR || __dirname;
-
-// Ensure the data directory exists (critical for Render Persistent Disk)
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+// Resolve the data directory safely — fall back to project root if disk not ready
+let dataDir = process.env.DATA_DIR || __dirname;
+if (process.env.DATA_DIR) {
+  if (!fs.existsSync(process.env.DATA_DIR)) {
+    try {
+      fs.mkdirSync(process.env.DATA_DIR, { recursive: true });
+      console.log(`Created data directory: ${process.env.DATA_DIR}`);
+    } catch (err) {
+      console.warn(`Warning: Could not create DATA_DIR (${process.env.DATA_DIR}): ${err.message}. Falling back to project directory.`);
+      dataDir = __dirname;
+    }
+  }
 }
 
 const dbFile = process.env.NODE_ENV === 'test'
