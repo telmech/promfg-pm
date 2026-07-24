@@ -482,8 +482,8 @@ module.exports = {
     const attachments = task.attachments || [];
 
     db.prepare(`
-      INSERT INTO tasks (id, org_id, project_id, title, description, assignee_id, priority, status, due_date, created_by, created_at, attachments_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO tasks (id, org_id, project_id, title, description, assignee_id, priority, status, due_date, start_date, allocated_operator, operator_role, mapped_duration, created_by, created_at, attachments_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
       orgId,
@@ -494,6 +494,10 @@ module.exports = {
       task.priority || 'medium',
       task.status || 'todo',
       task.dueDate || '',
+      task.startDate || '',
+      task.allocatedOperator || '',
+      task.operatorRole || '',
+      task.mappedDuration || null,
       task.createdBy || '',
       new Date().toISOString(),
       JSON.stringify(attachments)
@@ -515,6 +519,10 @@ module.exports = {
     if (updates.priority !== undefined) { fields.push('priority = ?'); values.push(updates.priority); }
     if (updates.status !== undefined) { fields.push('status = ?'); values.push(updates.status); }
     if (updates.dueDate !== undefined) { fields.push('due_date = ?'); values.push(updates.dueDate); }
+    if (updates.startDate !== undefined) { fields.push('start_date = ?'); values.push(updates.startDate); }
+    if (updates.allocatedOperator !== undefined) { fields.push('allocated_operator = ?'); values.push(updates.allocatedOperator); }
+    if (updates.operatorRole !== undefined) { fields.push('operator_role = ?'); values.push(updates.operatorRole); }
+    if (updates.mappedDuration !== undefined) { fields.push('mapped_duration = ?'); values.push(updates.mappedDuration); }
     if (updates.attachments !== undefined) { fields.push('attachments_json = ?'); values.push(JSON.stringify(updates.attachments)); }
 
     if (fields.length > 0) {

@@ -574,8 +574,12 @@ app.post('/api/projects/:id/customer-logo', authenticateToken, requireAdminPMOrS
   }
 });
 
-// Project Timeline Update API
-app.put('/api/projects/:id/timeline', authenticateToken, requireProjectAccess, requireAdminPMOrSuperAdmin, (req, res) => {
+// Project Timeline Update API (Allow Admin, PM, Dept Head)
+app.put('/api/projects/:id/timeline', authenticateToken, requireProjectAccess, (req, res) => {
+  const role = req.user.role;
+  if (role !== 'admin' && role !== 'owner' && role !== 'project_manager' && role !== 'department_head') {
+    return res.status(403).json({ error: 'Access denied: You cannot edit timelines.' });
+  }
   const { timeline } = req.body;
   if (!Array.isArray(timeline)) {
     return res.status(400).json({ error: 'Timeline must be a valid list of stages.' });
