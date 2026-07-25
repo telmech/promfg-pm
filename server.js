@@ -611,22 +611,19 @@ app.put('/api/projects/:id/timeline', authenticateToken, requireProjectAccess, (
 // 6. Task Management APIs (Now allows member task creation)
 app.get('/api/tasks', authenticateToken, requireProjectAccess, (req, res) => {
   const allTasks = db.getTasks(req.user.orgId);
-  const allProjects = db.getProjects(req.user.orgId);
   const role = req.user.role;
   
-  if (role === 'admin' || role === 'owner' || role === 'project_manager') {
+  // Admins, Owners, PMs, Dept Heads, Ops Heads, MDs (i.e. anything other than 'member') can see all tasks
+  if (role !== 'member') {
     return res.json(allTasks);
   }
 
-  const allowedProjectIds = allProjects
-    .filter(p => p.members && p.members.includes(req.user.id))
-    .map(p => p.id);
-    
+  // Members should ONLY see their own tasks (assigned to them or created by them)
   const filteredTasks = allTasks.filter(t => 
-    t.assigneeId === req.user.id || t.createdBy === req.user.id || allowedProjectIds.includes(t.projectId)
+    t.assigneeId === req.user.id || t.createdBy === req.user.id
   );
   
-  res.json(filteredTasks);
+  return res.json(filteredTasks);
 });
 
 app.post('/api/tasks', authenticateToken, requireProjectAccess, (req, res) => {
