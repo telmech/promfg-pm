@@ -507,6 +507,30 @@ module.exports = {
 
   // PROJECTS
   getProjects: (orgId) => {
+    // Auto-seed a default "Plant Operations, HR & Admin" project if it doesn't exist
+    const defaultProjId = 'plant_gen_project_' + orgId;
+    const exists = db.prepare('SELECT id FROM projects WHERE id = ? AND org_id = ?').get(defaultProjId, orgId);
+    if (!exists) {
+      try {
+        db.prepare(`
+          INSERT INTO projects (id, org_id, name, project_number, description, start_date, end_date, customer_name, members_json, timeline_json)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          defaultProjId,
+          orgId,
+          'Plant Operations, HR & Admin',
+          'PLANT-GEN',
+          'General administrative, HR, facility, maintenance, and non-project tasks.',
+          new Date().toISOString().split('T')[0],
+          '2035-12-31',
+          'Internal',
+          JSON.stringify([]),
+          JSON.stringify(DEFAULT_TIMELINE_STAGES)
+        );
+      } catch (err) {
+        console.error('Error auto-seeding default project:', err.message);
+      }
+    }
     return db.prepare('SELECT * FROM projects WHERE org_id = ?').all(orgId).map(mapProject);
   },
   getProjectById: (orgId, id) => {
