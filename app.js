@@ -3231,6 +3231,43 @@ function setupEventListeners() {
     };
     reader.readAsText(file);
   });
+
+  // Init Supplier Directory Bindings
+  setupSupplierDirectoryBindings();
+}
+
+// ==================== UI UTILITIES ====================
+
+function showToast(message, type = 'success') {
+  // Remove existing toasts
+  const existing = document.querySelector('.pm-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = 'pm-toast';
+  const bgColor = type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#10b981';
+  toast.style.cssText = `
+    position: fixed; bottom: 90px; right: 20px; z-index: 99999;
+    background: ${bgColor}; color: #fff;
+    padding: 12px 20px; border-radius: 10px;
+    font-size: 0.85rem; font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    animation: slideInRight 0.3s ease;
+    max-width: 320px; line-height: 1.4;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.add('active');
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('active');
 }
 
 // ==================== DATE/TIME UTILITIES ====================
@@ -5601,6 +5638,13 @@ function openPRDetailsModal(prId) {
   document.getElementById('detail-pr-title').textContent = `Requisition Details - ${pr.id}`;
   document.getElementById('detail-pr-project').textContent = project.name;
   document.getElementById('detail-pr-raisedby').textContent = pr.raisedByName;
+  
+  const deptEl = document.getElementById('detail-pr-raisedby-dept');
+  if (deptEl) deptEl.textContent = pr.raisedByDept || 'General';
+
+  const remarksEl = document.getElementById('detail-pr-remarks-view');
+  if (remarksEl) remarksEl.textContent = pr.remarks || 'None';
+
   document.getElementById('detail-pr-date').textContent = new Date(pr.createdAt).toLocaleString();
   
   const statusLabel = document.getElementById('detail-pr-status');
@@ -5632,12 +5676,13 @@ function openPRDetailsModal(prId) {
     
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${item.description}</td>
+      <td><strong>${item.description}</strong></td>
+      <td><span style="font-size:0.75rem; background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600; color:#475569;">${item.category || 'Raw Material'}</span></td>
       <td>${qty}</td>
       <td>${item.unit}</td>
-      <td>₹	ext{₹} ${rate.toLocaleString('en-IN')}</td>
-      <td>₹	ext{₹} ${total.toLocaleString('en-IN')}</td>
-    `.replace('₹	ext{₹}', '₹').replace('₹	ext{₹}', '₹');
+      <td>₹${rate.toLocaleString('en-IN')}</td>
+      <td>₹${total.toLocaleString('en-IN')}</td>
+    `;
     tbody.appendChild(tr);
   });
 
@@ -5750,56 +5795,124 @@ async function handlePRAction(action, prId) {
 }
 
 function openPRFormModal() {
+  // ── Populate Raised By from current user / team members ──────────────────
+  const nameEl = document.getElementById('pr-raised-by-name');
+  const deptEl = document.getElementById('pr-raised-by-dept');
+
+  if (nameEl && deptEl) {
+    // Try to find this user in state.teamMembers
+    const currentUserId = state.user?.id;
+    const me = (state.teamMembers || []).find(m => m.id === currentUserId || m.userId === currentUserId);
+
+    if (me) {
+      nameEl.textContent = me.name || me.email || state.user?.name || '—';
+      deptEl.textContent = me.department || me.role ? formatRoleTitle(me.role) : '—';
+    } else {
+      nameEl.textContent = state.user?.name || state.user?.email || '—';
+      deptEl.textContent = state.user?.role ? formatRoleTitle(state.user.role) : '—';
+    }
+  }
+
+  // ── Populate project dropdown ─────────────────────────────────────────────
   const projSelect = document.getElementById('pr-project');
   if (projSelect) {
     projSelect.innerHTML = '<option value="">-- Select Project --</option>';
     state.projects.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = p.name;
+      opt.textContent = p.name + (p.project_number ? ` (${p.project_number})` : '');
       projSelect.appendChild(opt);
     });
   }
 
+  // ── Reset items table ─────────────────────────────────────────────────────
   const tbody = document.getElementById('pr-items-tbody');
   if (tbody) {
     tbody.innerHTML = '';
     addPRItemRow();
   }
 
+  // ── Reset misc ────────────────────────────────────────────────────────────
+  const remarks = document.getElementById('pr-remarks');
+  if (remarks) remarks.value = '';
+  updatePRGrandTotal();
   document.getElementById('pr-form-error')?.classList.add('hidden');
   document.getElementById('modal-pr-form')?.classList.add('active');
+}
+
+function updatePRGrandTotal() {
+  let total = 0;
+  document.querySelectorAll('#pr-items-tbody tr').forEach(row => {
+    const qty = parseFloat(row.querySelector('.pr-item-qty')?.value) || 0;
+    const rate = parseFloat(row.querySelector('.pr-item-rate')?.value) || 0;
+    total += qty * rate;
+    const rowTotal = row.querySelector('.pr-item-row-total');
+    if (rowTotal) rowTotal.textContent = '₹' + (qty * rate).toLocaleString('en-IN', {maximumFractionDigits:2});
+  });
+  const grand = document.getElementById('pr-grand-total');
+  if (grand) grand.textContent = '₹' + total.toLocaleString('en-IN', {maximumFractionDigits:2});
 }
 
 function addPRItemRow() {
   const tbody = document.getElementById('pr-items-tbody');
   if (!tbody) return;
-  
+
+  const categories = [
+    'Raw Material', 'Consumable', 'BOP (Bought Out Part)',
+    'Electrical', 'Pneumatic', 'Tools & Equipment', 'Other'
+  ];
+  const catOptions = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><input type="text" class="pr-item-desc" required placeholder="Item description/specs..."></td>
-    <td><input type="number" class="pr-item-qty" required style="width:80px;" min="0.01" step="any" value="1"></td>
-    <td><input type="text" class="pr-item-unit" required style="width:70px;" value="Nos"></td>
-    <td><input type="number" class="pr-item-rate" required style="width:100px;" min="0" value="0"></td>
-    <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button></td>
+    <td style="padding:6px 8px;">
+      <input type="text" class="pr-item-desc" required placeholder="Item description / specs..." style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;">
+    </td>
+    <td style="padding:6px 8px;">
+      <select class="pr-item-cat" style="width:120px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.78rem;">
+        ${catOptions}
+      </select>
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="number" class="pr-item-qty" required style="width:65px;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;" min="0.01" step="any" value="1">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="text" class="pr-item-unit" required style="width:60px;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;" value="Nos">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="number" class="pr-item-rate" style="width:90px;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;" min="0" value="0">
+    </td>
+    <td style="padding:6px 8px;font-weight:600;font-size:0.82rem;color:#0284c7;" class="pr-item-row-total">₹0</td>
+    <td style="padding:6px 8px;text-align:center;">
+      <button type="button" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:1rem;line-height:1;" onclick="this.closest('tr').remove(); updatePRGrandTotal();">&times;</button>
+    </td>
   `;
+
+  // Attach live total update
+  tr.querySelectorAll('.pr-item-qty,.pr-item-rate').forEach(inp => {
+    inp.addEventListener('input', updatePRGrandTotal);
+  });
+
   tbody.appendChild(tr);
+  updatePRGrandTotal();
 }
 
 async function onPRFormSubmit(e) {
   e.preventDefault();
   const projectId = document.getElementById('pr-project').value;
+  const remarks = document.getElementById('pr-remarks')?.value?.trim() || '';
   const rows = document.querySelectorAll('#pr-items-tbody tr');
-  
+
   const items = [];
   rows.forEach(row => {
-    const description = row.querySelector('.pr-item-desc').value;
+    const description = row.querySelector('.pr-item-desc').value.trim();
+    const category = row.querySelector('.pr-item-cat')?.value || '';
     const qty = parseFloat(row.querySelector('.pr-item-qty').value) || 0;
     const unit = row.querySelector('.pr-item-unit').value;
     const estimatedPrice = parseFloat(row.querySelector('.pr-item-rate').value) || 0;
-    
+
     if (description) {
-      items.push({ description, qty, unit, estimatedPrice });
+      items.push({ description, category, qty, unit, estimatedPrice });
     }
   });
 
@@ -5809,12 +5922,12 @@ async function onPRFormSubmit(e) {
   }
 
   try {
-    await apiCall('/api/prs', 'POST', { projectId, items });
+    await apiCall('/api/prs', 'POST', { projectId, items, remarks });
     document.getElementById('modal-pr-form').classList.remove('active');
     await fetchPRs();
     renderPRDashboard();
     renderPRTable();
-    showToast('Purchase Requisition raised successfully.');
+    showToast('✅ Purchase Requisition raised successfully.');
   } catch (err) {
     const errEl = document.getElementById('pr-form-error');
     if (errEl) {
@@ -5823,6 +5936,7 @@ async function onPRFormSubmit(e) {
     }
   }
 }
+
 
 // ==================== SUPPLIER DIRECTORY UI LOGIC ====================
 
@@ -5941,7 +6055,7 @@ async function deleteSupplier(supId) {
 }
 
 // Bind Supplier Directory trigger & form submission inside setupListeners
-document.addEventListener('DOMContentLoaded', () => {
+function setupSupplierDirectoryBindings() {
   document.getElementById('btn-manage-suppliers')?.addEventListener('click', openSupplierDirectoryModal);
   document.getElementById('supplier-search-input')?.addEventListener('input', renderSupplierDirectory);
   
@@ -5974,4 +6088,4 @@ document.addEventListener('DOMContentLoaded', () => {
       alert(err.message);
     }
   });
-});
+}

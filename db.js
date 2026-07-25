@@ -95,6 +95,22 @@ try {
   console.error('Suppliers table migration error:', err.message);
 }
 
+// Migration: Add raised_by_dept and remarks to purchase_requisitions table
+try {
+  const prInfo = db.prepare("PRAGMA table_info(purchase_requisitions)").all();
+  const prCols = prInfo.map(c => c.name);
+  if (!prCols.includes('raised_by_dept')) {
+    db.prepare("ALTER TABLE purchase_requisitions ADD COLUMN raised_by_dept TEXT").run();
+    console.log('Migration: Added raised_by_dept to purchase_requisitions');
+  }
+  if (!prCols.includes('remarks')) {
+    db.prepare("ALTER TABLE purchase_requisitions ADD COLUMN remarks TEXT").run();
+    console.log('Migration: Added remarks to purchase_requisitions');
+  }
+} catch (err) {
+  console.error('PR table migration error:', err.message);
+}
+
 // Self-initialization checking & seeding
 const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
 if (!tableExists) {
@@ -332,6 +348,8 @@ function mapPR(p) {
     projectId: p.project_id,
     raisedById: p.raised_by_id,
     raisedByName: p.raised_by_name,
+    raisedByDept: p.raised_by_dept || null,
+    remarks: p.remarks || null,
     status: p.status,
     createdAt: p.created_at,
     poNumber: p.po_number,
@@ -1026,16 +1044,18 @@ module.exports = {
 
     db.prepare(`
       INSERT INTO purchase_requisitions (
-        id, org_id, project_id, raised_by_id, raised_by_name, status, created_at, po_number, 
+        id, org_id, project_id, raised_by_id, raised_by_name, raised_by_dept, remarks, status, created_at, po_number, 
         items_json, ops_head_approval_json, md_approval_json
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       prCode,
       orgId,
       prData.projectId,
       prData.raisedById,
       prData.raisedByName,
+      prData.raisedByDept || null,
+      prData.remarks || null,
       'pending_ops',
       new Date().toISOString(),
       null,

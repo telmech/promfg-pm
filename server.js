@@ -1328,7 +1328,7 @@ app.get('/api/prs', authenticateToken, requirePRAccess, (req, res) => {
 });
 
 app.post('/api/prs', authenticateToken, requirePRAccess, (req, res) => {
-  const { projectId, items } = req.body;
+  const { projectId, items, remarks } = req.body;
   if (!projectId || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Project and items list are required.' });
   }
@@ -1336,8 +1336,10 @@ app.post('/api/prs', authenticateToken, requirePRAccess, (req, res) => {
   try {
     const prData = {
       projectId,
+      remarks: remarks || '',
       items: items.map(item => ({
         description: item.description || '',
+        category: item.category || 'Raw Material',
         qty: parseFloat(item.qty) || 1,
         unit: item.unit || 'Nos',
         estimatedPrice: parseFloat(item.estimatedPrice) || 0,
@@ -1345,6 +1347,7 @@ app.post('/api/prs', authenticateToken, requirePRAccess, (req, res) => {
       })),
       raisedById: req.user.id,
       raisedByName: req.user.name,
+      raisedByDept: req.user.department || 'General',
       status: 'pending_ops' // default to level 1 pending ops approval
     };
 
