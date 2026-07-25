@@ -32,10 +32,20 @@ io.on('connection', (socket) => {
   // Client connected and joined their org room
 });
 
-// Ensure uploads folder exists
-const uploadsDir = path.join(__dirname, 'uploads');
+// Resolve the data directory safely (same as db.js) to support persistent storage volumes (e.g. Render)
+let dataDir = process.env.DATA_DIR || __dirname;
+if (process.env.DATA_DIR && !fs.existsSync(process.env.DATA_DIR)) {
+  try {
+    fs.mkdirSync(process.env.DATA_DIR, { recursive: true });
+  } catch (_) {}
+}
+
+// Ensure uploads folder exists in persistent storage
+const uploadsDir = path.join(dataDir, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (_) {}
 }
 
 // Multer Storage Configuration for File Attachments
