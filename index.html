@@ -847,6 +847,7 @@
           <div class="rfq-filter-bar" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
               <button id="btn-add-bom-item" class="btn btn-primary">+ Add Item</button>
+              <button id="btn-manage-suppliers" class="btn btn-secondary" style="background:#4f46e5; color:#ffffff; border:1px solid #4338ca;">🏢 Suppliers Directory</button>
               <button id="btn-export-bom" class="btn btn-secondary">Export Excel</button>
               <button id="btn-download-bom-template" class="btn btn-secondary" style="background:#0f172a; color:#ffffff; border:1px solid #334155; font-weight:600;">📥 Download Sample Format</button>
             </div>
@@ -1190,9 +1191,15 @@
       </div>
       <form id="project-form">
         <input type="hidden" id="project-id-field">
-        <div class="form-group">
-          <label for="project-name">Project Name *</label>
-          <input type="text" id="project-name" required placeholder="Enter project name">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="project-name">Project Name *</label>
+            <input type="text" id="project-name" required placeholder="Enter project name">
+          </div>
+          <div class="form-group">
+            <label for="project-number">Project Number / Code *</label>
+            <input type="text" id="project-number" required placeholder="e.g. PRJ-2026-001">
+          </div>
         </div>
         <div class="form-group">
           <label for="project-description">Description</label>
@@ -1719,7 +1726,9 @@
           <div style="background:var(--primary-light); padding:12px; border-radius:6px; border:1px solid var(--border-color);">
             <h4 style="margin:0 0 10px 0; font-size:0.8rem; font-weight:700; color:var(--primary-color);">Supplier A</h4>
             <div class="form-group" style="margin-bottom:8px;">
-              <input type="text" id="bom-supA-name" placeholder="Supplier A Name" style="font-size:0.75rem; padding:6px 8px;">
+              <select id="bom-supA-name" class="bom-supplier-select" style="font-size:0.75rem; padding:6px 8px; width:100%; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg);">
+                <option value="">Select Supplier...</option>
+              </select>
             </div>
             <div class="form-group" style="margin-bottom:8px;">
               <input type="number" id="bom-supA-price" placeholder="Price (₹)" style="font-size:0.75rem; padding:6px 8px;" min="0">
@@ -1736,7 +1745,9 @@
           <div style="background:var(--primary-light); padding:12px; border-radius:6px; border:1px solid var(--border-color);">
             <h4 style="margin:0 0 10px 0; font-size:0.8rem; font-weight:700; color:var(--primary-color);">Supplier B</h4>
             <div class="form-group" style="margin-bottom:8px;">
-              <input type="text" id="bom-supB-name" placeholder="Supplier B Name" style="font-size:0.75rem; padding:6px 8px;">
+              <select id="bom-supB-name" class="bom-supplier-select" style="font-size:0.75rem; padding:6px 8px; width:100%; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg);">
+                <option value="">Select Supplier...</option>
+              </select>
             </div>
             <div class="form-group" style="margin-bottom:8px;">
               <input type="number" id="bom-supB-price" placeholder="Price (₹)" style="font-size:0.75rem; padding:6px 8px;" min="0">
@@ -1753,7 +1764,9 @@
           <div style="background:var(--primary-light); padding:12px; border-radius:6px; border:1px solid var(--border-color);">
             <h4 style="margin:0 0 10px 0; font-size:0.8rem; font-weight:700; color:var(--primary-color);">Supplier C</h4>
             <div class="form-group" style="margin-bottom:8px;">
-              <input type="text" id="bom-supC-name" placeholder="Supplier C Name" style="font-size:0.75rem; padding:6px 8px;">
+              <select id="bom-supC-name" class="bom-supplier-select" style="font-size:0.75rem; padding:6px 8px; width:100%; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg);">
+                <option value="">Select Supplier...</option>
+              </select>
             </div>
             <div class="form-group" style="margin-bottom:8px;">
               <input type="number" id="bom-supC-price" placeholder="Price (₹)" style="font-size:0.75rem; padding:6px 8px;" min="0">
@@ -1790,6 +1803,120 @@
           <button type="submit" class="btn btn-primary" id="bom-submit-btn">Save Item</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- BOM MANUFACTURING PROCESS TRACKER MODAL -->
+  <div id="modal-bom-process" class="modal">
+    <div class="modal-content modal-large" style="max-width:720px;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;border-radius:12px 12px 0 0;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <h2 style="color:#fff;margin:0;font-size:1.2rem;">🏭 Manufacturing Process Tracker</h2>
+          <p id="bom-process-item-label" style="color:#94a3b8;margin:4px 0 0;font-size:0.85rem;"></p>
+        </div>
+        <button type="button" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1.1rem;" onclick="closeModal('modal-bom-process')">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;max-height:70vh;overflow-y:auto;">
+        <input type="hidden" id="bom-process-item-id">
+        <input type="hidden" id="bom-process-project-id">
+
+        <!-- Stage 1: RM Order -->
+        <div style="border:1px solid #dbeafe;border-radius:12px;margin-bottom:14px;overflow:hidden;">
+          <div style="background:#eff6ff;padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #dbeafe;">
+            <span style="font-size:1.3rem;">📦</span>
+            <div style="flex:1;"><strong style="color:#1e40af;">Stage 1: Raw Material Order</strong><span style="font-size:0.75rem;color:#6b7280;margin-left:8px;">(Purchase Dept)</span></div>
+            <select id="ps-rmOrder-status" style="border:1px solid #bfdbfe;border-radius:8px;padding:4px 10px;font-size:0.82rem;background:#fff;">
+              <option>Pending</option><option>Ordered</option><option>Received</option>
+            </select>
+          </div>
+          <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Order Date</label><input type="date" id="ps-rmOrder-orderedDate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Expected Delivery</label><input type="date" id="ps-rmOrder-expectedDate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div style="grid-column:span 2;"><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Notes / PO Number</label><input type="text" id="ps-rmOrder-notes" placeholder="e.g. PO-2026-0043" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+          </div>
+        </div>
+
+        <!-- Stage 2: RM Receipt -->
+        <div style="border:1px solid #bbf7d0;border-radius:12px;margin-bottom:14px;overflow:hidden;">
+          <div style="background:#f0fdf4;padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #bbf7d0;">
+            <span style="font-size:1.3rem;">✅</span>
+            <div style="flex:1;"><strong style="color:#15803d;">Stage 2: Material Receipt &amp; Handover</strong><span style="font-size:0.75rem;color:#6b7280;margin-left:8px;">(Purchase confirms receipt → hands to Fab/Tool Room)</span></div>
+            <select id="ps-rmReceipt-status" style="border:1px solid #bbf7d0;border-radius:8px;padding:4px 10px;font-size:0.82rem;background:#fff;">
+              <option>Pending</option><option>Received</option><option>Handed Over</option>
+            </select>
+          </div>
+          <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Receipt Date</label><input type="date" id="ps-rmReceipt-receivedDate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Qty Received</label><input type="number" id="ps-rmReceipt-qtyReceived" placeholder="e.g. 50" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div style="grid-column:span 2;"><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Notes</label><input type="text" id="ps-rmReceipt-notes" placeholder="e.g. Partial receipt — balance expected on..." style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+          </div>
+        </div>
+
+        <!-- Stage 3: Manufacturing (Fab / Tool Room / 3P) -->
+        <div style="border:1px solid #e9d5ff;border-radius:12px;margin-bottom:14px;overflow:hidden;">
+          <div style="background:#fdf4ff;padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e9d5ff;">
+            <span style="font-size:1.3rem;">🔧</span>
+            <div style="flex:1;"><strong style="color:#7e22ce;">Stage 3: Manufacturing</strong><span style="font-size:0.75rem;color:#6b7280;margin-left:8px;">(Fab / Tool Room / 3rd Party Supplier)</span></div>
+            <select id="ps-manufacturing-status" style="border:1px solid #e9d5ff;border-radius:8px;padding:4px 10px;font-size:0.82rem;background:#fff;">
+              <option>Pending</option><option>Assigned</option><option>In Progress</option><option>Complete</option>
+            </select>
+          </div>
+          <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Assigned To</label>
+              <select id="ps-manufacturing-assignedTo" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;background:#fff;" onchange="toggleMfgSupplierField()">
+                <option value="Fabrication">Fabrication (Internal)</option>
+                <option value="Tool Room">Tool Room (Internal)</option>
+                <option value="3P Supplier">3rd Party Supplier</option>
+              </select>
+            </div>
+            <div id="mfg-supplier-field" style="display:none;">
+              <label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">3P Supplier Name</label>
+              <input type="text" id="ps-manufacturing-supplierName" placeholder="e.g. ABC Fabricators Pvt Ltd" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;">
+            </div>
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Start Date</label><input type="date" id="ps-manufacturing-startDate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Completed Date</label><input type="date" id="ps-manufacturing-completedDate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div style="grid-column:span 2;"><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Notes</label><input type="text" id="ps-manufacturing-notes" placeholder="e.g. Machining complete, QC pending..." style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+          </div>
+        </div>
+
+        <!-- Stage 4: Surface Treatment -->
+        <div style="border:1px solid #fed7aa;border-radius:12px;margin-bottom:14px;overflow:hidden;">
+          <div style="background:#fff7ed;padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #fed7aa;">
+            <span style="font-size:1.3rem;">🎨</span>
+            <div style="flex:1;"><strong style="color:#c2410c;">Stage 4: Surface Treatment</strong><span style="font-size:0.75rem;color:#6b7280;margin-left:8px;">(Purchase issues to vendor / confirms receipt)</span></div>
+            <select id="ps-surfaceTreatment-status" style="border:1px solid #fed7aa;border-radius:8px;padding:4px 10px;font-size:0.82rem;background:#fff;">
+              <option>Not Required</option><option>Pending</option><option>Issued</option><option>Received Back</option>
+            </select>
+          </div>
+          <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Treatment Type</label><input type="text" id="ps-surfaceTreatment-type" placeholder="e.g. Powder Coat, Anodize, Zinc Plate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Issued Date</label><input type="date" id="ps-surfaceTreatment-sentDate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Received Back Date</label><input type="date" id="ps-surfaceTreatment-receivedDate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Notes / Vendor</label><input type="text" id="ps-surfaceTreatment-notes" placeholder="e.g. Vendor: XYZ Coatings, RAL 7035 Grey" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+          </div>
+        </div>
+
+        <!-- Stage 5: Issue to Assembly -->
+        <div style="border:1px solid #6ee7b7;border-radius:12px;margin-bottom:4px;overflow:hidden;">
+          <div style="background:#ecfdf5;padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #6ee7b7;">
+            <span style="font-size:1.3rem;">🏭</span>
+            <div style="flex:1;"><strong style="color:#065f46;">Stage 5: Issue to Assembly</strong><span style="font-size:0.75rem;color:#6b7280;margin-left:8px;">(Final handover to Assembly dept)</span></div>
+            <select id="ps-issueToAssembly-status" style="border:1px solid #6ee7b7;border-radius:8px;padding:4px 10px;font-size:0.82rem;background:#fff;">
+              <option>Pending</option><option>Issued</option>
+            </select>
+          </div>
+          <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Issue Date</label><input type="date" id="ps-issueToAssembly-issuedDate" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Qty Issued</label><input type="number" id="ps-issueToAssembly-qtyIssued" placeholder="e.g. 50" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+            <div style="grid-column:span 2;"><label style="font-size:0.78rem;color:#6b7280;display:block;margin-bottom:4px;">Notes</label><input type="text" id="ps-issueToAssembly-notes" placeholder="e.g. Issued to Assembly Line 2..." style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:16px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-bom-process')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveBOMProcess()">💾 Save Process</button>
+      </div>
     </div>
   </div>
 
@@ -1927,6 +2054,102 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- SUPPLIER DIRECTORY LIST MODAL -->
+  <div id="modal-supplier-directory" class="modal">
+    <div class="modal-content modal-large" style="max-width:850px;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#4f46e5,#4338ca);color:#fff;border-radius:12px 12px 0 0;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <h2 style="color:#fff;margin:0;font-size:1.2rem;">🏢 Registered Suppliers Directory</h2>
+          <p style="color:#c7d2fe;margin:4px 0 0;font-size:0.85rem;">Manage active manufacturing partners, surface treatment vendors and raw material suppliers.</p>
+        </div>
+        <button type="button" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1.1rem;" onclick="closeModal('modal-supplier-directory')">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;">
+          <input type="text" id="supplier-search-input" placeholder="🔍 Search suppliers by name, contact or GST..." style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;width:280px;">
+          <button type="button" class="btn btn-primary" onclick="openAddSupplierModal()" style="background:#10b981;border-color:#059669;">+ Register New Supplier</button>
+        </div>
+        <div style="max-height:50vh;overflow-y:auto;border:1px solid #e2e8f0;border-radius:12px;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;text-align:left;">
+            <thead>
+              <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                <th style="padding:12px 16px;">Supplier Name</th>
+                <th style="padding:12px 16px;">Category</th>
+                <th style="padding:12px 16px;">Contact Person</th>
+                <th style="padding:12px 16px;">Contact Details</th>
+                <th style="padding:12px 16px;">GST No</th>
+                <th style="padding:12px 16px;text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="supplier-directory-tbody">
+              <!-- Loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT SUPPLIER FORM MODAL -->
+  <div id="modal-supplier-form" class="modal">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <h2 id="supplier-form-title">Register Supplier</h2>
+        <button type="button" class="btn-close-modal" onclick="closeModal('modal-supplier-form')">&times;</button>
+      </div>
+      <form id="supplier-form">
+        <input type="hidden" id="supplier-id-field">
+        <div class="form-group">
+          <label for="supplier-name">Supplier Name *</label>
+          <input type="text" id="supplier-name" required placeholder="e.g. ABC Steel Fabricators">
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="supplier-category">Category *</label>
+            <select id="supplier-category" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #e2e8f0;">
+              <option value="Raw Material">Raw Material</option>
+              <option value="Surface Treatment">Surface Treatment</option>
+              <option value="3P Manufacturing">3P Manufacturing</option>
+              <option value="General">General / Bought-Out</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="supplier-gst">GST Number</label>
+            <input type="text" id="supplier-gst" placeholder="e.g. 22AAAAA0000A1Z0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="supplier-contact">Contact Person</label>
+          <input type="text" id="supplier-contact" placeholder="e.g. Rajesh Kumar">
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="supplier-phone">Phone Number</label>
+            <input type="text" id="supplier-phone" placeholder="e.g. 9876543210">
+          </div>
+          <div class="form-group">
+            <label for="supplier-email">Email Address</label>
+            <input type="email" id="supplier-email" placeholder="e.g. sales@abcsteel.com">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="supplier-payment">Payment Terms</label>
+            <input type="text" id="supplier-payment" placeholder="e.g. Net 30 Days">
+          </div>
+          <div class="form-group">
+            <label for="supplier-leadtime">Typical Lead Time</label>
+            <input type="text" id="supplier-leadtime" placeholder="e.g. 7 Days">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-supplier-form')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Supplier</button>
+        </div>
+      </form>
     </div>
   </div>
 

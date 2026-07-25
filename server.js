@@ -967,6 +967,59 @@ app.post('/api/notifications/check-due-dates', authenticateToken, (req, res) => 
 });
 
 
+// ==================== BOM PROCESS STAGES API ====================
+app.put('/api/projects/:projectId/bom/:itemId/process', authenticateToken, requireBOMAccess, (req, res) => {
+  try {
+    const { projectId, itemId } = req.params;
+    const stages = req.body;
+    if (!stages || typeof stages !== 'object') {
+      return res.status(400).json({ error: 'Process stages data is required.' });
+    }
+    const updated = db.updateBOMProcessStages(req.user.orgId, itemId, stages);
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+
+// ==================== SUPPLIER DIRECTORY API ====================
+app.get('/api/suppliers', authenticateToken, (req, res) => {
+  try {
+    res.json(db.getSuppliers(req.user.orgId));
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/suppliers', authenticateToken, requirePurchasingOrAdmin, (req, res) => {
+  try {
+    const supplier = db.createSupplier(req.user.orgId, req.body);
+    res.status(201).json(supplier);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/suppliers/:id', authenticateToken, requirePurchasingOrAdmin, (req, res) => {
+  try {
+    const supplier = db.updateSupplier(req.user.orgId, req.params.id, req.body);
+    res.json(supplier);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/suppliers/:id', authenticateToken, requirePurchasingOrAdmin, (req, res) => {
+  try {
+    db.deleteSupplier(req.user.orgId, req.params.id);
+    res.json({ message: 'Supplier deactivated.' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+
 // ==========================================
 // SAAS OWNER PANEL APIS
 // ==========================================

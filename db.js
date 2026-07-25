@@ -51,6 +51,50 @@ try {
   console.error("Migration error:", err.message);
 }
 
+// Migration: Add process_stages_json to bom_items if missing
+try {
+  const bomInfo = db.prepare("PRAGMA table_info(bom_items)").all();
+  const bomCols = bomInfo.map(c => c.name);
+  if (!bomCols.includes('process_stages_json')) {
+    db.prepare("ALTER TABLE bom_items ADD COLUMN process_stages_json TEXT DEFAULT '{}'").run();
+    console.log('Migration: Added process_stages_json to bom_items');
+  }
+} catch (err) {
+  console.error('BOM migration error:', err.message);
+}
+
+// Migration: Add project_number to projects table
+try {
+  const projInfo = db.prepare("PRAGMA table_info(projects)").all();
+  const projCols = projInfo.map(c => c.name);
+  if (!projCols.includes('project_number')) {
+    db.prepare("ALTER TABLE projects ADD COLUMN project_number TEXT").run();
+    console.log('Migration: Added project_number to projects');
+  }
+} catch (err) {
+  console.error('Project migration error:', err.message);
+}
+
+// Migration: Create suppliers table if not exists
+try {
+  db.prepare(`CREATE TABLE IF NOT EXISTS suppliers (
+    id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    contact_person TEXT,
+    phone TEXT,
+    email TEXT,
+    category TEXT NOT NULL DEFAULT 'General',
+    gst_number TEXT,
+    payment_terms TEXT,
+    lead_time TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL
+  )`).run();
+} catch (err) {
+  console.error('Suppliers table migration error:', err.message);
+}
+
 // Self-initialization checking & seeding
 const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
 if (!tableExists) {
@@ -194,6 +238,7 @@ function mapProject(p) {
     id: p.id,
     orgId: p.org_id,
     name: p.name,
+    projectNumber: p.project_number || '',
     description: p.description,
     startDate: p.start_date,
     endDate: p.end_date,
@@ -274,7 +319,8 @@ function mapBOM(b) {
     supplierC_leadTime: b.supplier_c_lead_time,
     supplierC_payment: b.supplier_c_payment,
     winner: b.winner,
-    createdAt: b.created_at
+    createdAt: b.created_at,
+    processStages: JSON.parse(b.process_stages_json || '{}')
   };
 }
 
@@ -455,12 +501,11 @@ module.exports = {
     const timeline = project.timeline || JSON.parse(JSON.stringify(DEFAULT_TIMELINE_STAGES));
 
     db.prepare(`
-      INSERT INTO projects (id, org_id, name, description, start_date, end_date, customer_name, customer_logo, created_at, members_json, timeline_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO projects (id, org_id, name, project_number, description, start_date, end_date, customer_name, customer_logo, created_at, members_json, timeline_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      id,
-      orgId,
-      project.name,
+      id, orgId, project.name,
+      project.projectNumber || '',
       project.description || '',
       project.startDate || '',
       project.endDate || '',
@@ -482,6 +527,7 @@ module.exports = {
     const values = [];
 
     if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+    if (updates.projectNumber !== undefined) { fields.push('project_number = ?'); values.push(updates.projectNumber); }
     if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
     if (updates.startDate !== undefined) { fields.push('start_date = ?'); values.push(updates.startDate); }
     if (updates.endDate !== undefined) { fields.push('end_date = ?'); values.push(updates.endDate); }
@@ -838,42 +884,40 @@ module.exports = {
   },
   createBOMItem: (orgId, bomData) => {
     const id = bomData.id || ('bom_' + Date.now() + Math.floor(Math.random() * 100));
+    const defaultStages = JSON.stringify({
+      rmOrder:          { status: 'Pending', orderedDate: '', expectedDate: '', notes: '' },
+      rmReceipt:        { status: 'Pending', receivedDate: '', qtyReceived: '', notes: '' },
+      manufacturing:    { assignedTo: 'Fabrication', type: 'Internal', supplierName: '', status: 'Pending', startDate: '', completedDate: '', notes: '' },
+      surfaceTreatment: { required: false, status: 'Not Required', sentDate: '', receivedDate: '', type: '', notes: '' },
+      issueToAssembly:  { status: 'Pending', issuedDate: '', qtyIssued: '', notes: '' }
+    });
     db.prepare(`
       INSERT INTO bom_items (
         id, org_id, project_id, item_code, category, description, quantity, unit, target_date, status, 
         supplier_a_name, supplier_a_price, supplier_a_lead_time, supplier_a_payment,
         supplier_b_name, supplier_b_price, supplier_b_lead_time, supplier_b_payment,
         supplier_c_name, supplier_c_price, supplier_c_lead_time, supplier_c_payment,
-        winner, created_at
+        winner, created_at, process_stages_json
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      id,
-      orgId,
-      bomData.projectId,
-      bomData.itemCode || '',
-      bomData.category || '',
-      bomData.description || '',
-      bomData.quantity || 1,
-      bomData.unit || 'Nos',
-      bomData.targetDate || '',
-      bomData.status || 'Draft',
-      bomData.supplierA_name || '',
-      bomData.supplierA_price || 0,
-      bomData.supplierA_leadTime || '',
-      bomData.supplierA_payment || '',
-      bomData.supplierB_name || '',
-      bomData.supplierB_price || 0,
-      bomData.supplierB_leadTime || '',
-      bomData.supplierB_payment || '',
-      bomData.supplierC_name || '',
-      bomData.supplierC_price || 0,
-      bomData.supplierC_leadTime || '',
-      bomData.supplierC_payment || '',
-      bomData.winner || '',
-      new Date().toISOString()
+      id, orgId, bomData.projectId,
+      bomData.itemCode || '', bomData.category || '',
+      bomData.description || '', bomData.quantity || 1, bomData.unit || 'Nos',
+      bomData.targetDate || '', bomData.status || 'Draft',
+      bomData.supplierA_name || '', bomData.supplierA_price || 0, bomData.supplierA_leadTime || '', bomData.supplierA_payment || '',
+      bomData.supplierB_name || '', bomData.supplierB_price || 0, bomData.supplierB_leadTime || '', bomData.supplierB_payment || '',
+      bomData.supplierC_name || '', bomData.supplierC_price || 0, bomData.supplierC_leadTime || '', bomData.supplierC_payment || '',
+      bomData.winner || '', new Date().toISOString(), defaultStages
     );
+    return mapBOM(db.prepare('SELECT * FROM bom_items WHERE id = ?').get(id));
+  },
 
+  updateBOMProcessStages: (orgId, id, stages) => {
+    const existing = db.prepare('SELECT * FROM bom_items WHERE id = ? AND org_id = ?').get(id, orgId);
+    if (!existing) throw new Error('BOM item not found.');
+    db.prepare('UPDATE bom_items SET process_stages_json = ? WHERE id = ? AND org_id = ?')
+      .run(JSON.stringify(stages), id, orgId);
     return mapBOM(db.prepare('SELECT * FROM bom_items WHERE id = ?').get(id));
   },
   updateBOMItem: (orgId, id, updates) => {
@@ -1027,5 +1071,57 @@ module.exports = {
   deletePR: (orgId, id) => {
     db.prepare('DELETE FROM purchase_requisitions WHERE id = ? AND org_id = ?').run(id, orgId);
     return true;
+  },
+
+  // ==================== SUPPLIER DIRECTORY ====================
+  getSuppliers: (orgId) => {
+    return db.prepare('SELECT * FROM suppliers WHERE org_id = ? ORDER BY name ASC').all(orgId).map(mapSupplier);
+  },
+  getSuppliersByCategory: (orgId, category) => {
+    return db.prepare('SELECT * FROM suppliers WHERE org_id = ? AND category = ? AND status = ? ORDER BY name ASC')
+      .all(orgId, category, 'active').map(mapSupplier);
+  },
+  createSupplier: (orgId, data) => {
+    const id = 'sup_' + Date.now() + Math.floor(Math.random() * 1000);
+    db.prepare(`INSERT INTO suppliers (id, org_id, name, contact_person, phone, email, category, gst_number, payment_terms, lead_time, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(id, orgId, data.name, data.contactPerson || '', data.phone || '', data.email || '',
+        data.category || 'General', data.gstNumber || '', data.paymentTerms || '',
+        data.leadTime || '', 'active', new Date().toISOString());
+    return mapSupplier(db.prepare('SELECT * FROM suppliers WHERE id = ?').get(id));
+  },
+  updateSupplier: (orgId, id, data) => {
+    const existing = db.prepare('SELECT * FROM suppliers WHERE id = ? AND org_id = ?').get(id, orgId);
+    if (!existing) throw new Error('Supplier not found.');
+    const fields = [], values = [];
+    if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+    if (data.contactPerson !== undefined) { fields.push('contact_person = ?'); values.push(data.contactPerson); }
+    if (data.phone !== undefined) { fields.push('phone = ?'); values.push(data.phone); }
+    if (data.email !== undefined) { fields.push('email = ?'); values.push(data.email); }
+    if (data.category !== undefined) { fields.push('category = ?'); values.push(data.category); }
+    if (data.gstNumber !== undefined) { fields.push('gst_number = ?'); values.push(data.gstNumber); }
+    if (data.paymentTerms !== undefined) { fields.push('payment_terms = ?'); values.push(data.paymentTerms); }
+    if (data.leadTime !== undefined) { fields.push('lead_time = ?'); values.push(data.leadTime); }
+    if (data.status !== undefined) { fields.push('status = ?'); values.push(data.status); }
+    if (fields.length > 0) {
+      values.push(id); values.push(orgId);
+      db.prepare(`UPDATE suppliers SET ${fields.join(', ')} WHERE id = ? AND org_id = ?`).run(...values);
+    }
+    return mapSupplier(db.prepare('SELECT * FROM suppliers WHERE id = ?').get(id));
+  },
+  deleteSupplier: (orgId, id) => {
+    db.prepare('UPDATE suppliers SET status = ? WHERE id = ? AND org_id = ?').run('inactive', id, orgId);
+    return true;
   }
 };
+
+function mapSupplier(s) {
+  if (!s) return null;
+  return {
+    id: s.id, orgId: s.org_id, name: s.name,
+    contactPerson: s.contact_person, phone: s.phone, email: s.email,
+    category: s.category, gstNumber: s.gst_number,
+    paymentTerms: s.payment_terms, leadTime: s.lead_time,
+    status: s.status, createdAt: s.created_at
+  };
+}

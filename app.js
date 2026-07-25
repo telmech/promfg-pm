@@ -5,6 +5,8 @@ const state = {
   users: [],
   projects: [],
   tasks: [],
+  bomItems: [],
+  suppliers: [],
   notifications: [],
   departments: [],
   settings: { companyName: 'PRO-MFG', companyLogo: '' },
@@ -169,7 +171,7 @@ async function fetchViewData(viewId) {
       renderRFQTable();
       renderRFQCharts();
     } else if (viewId === 'bom') {
-      await fetchProjects();
+      await Promise.all([fetchProjects(), fetchSuppliers()]);
       populateBOMProjectDropdown();
       const projSelect = document.getElementById('bom-project-select');
       if (projSelect && projSelect.value) {
@@ -415,6 +417,11 @@ async function fetchPRs() {
 async function fetchProjects() {
   state.projects = await apiCall('/api/projects');
   return state.projects;
+}
+
+async function fetchSuppliers() {
+  state.suppliers = await apiCall('/api/suppliers');
+  return state.suppliers;
 }
 
 async function fetchTasks() {
@@ -692,8 +699,9 @@ function renderProjects() {
 
     const card = document.createElement('div');
     card.className = 'project-card';
+    const numBadge = proj.projectNumber ? `<span style="background:var(--primary-color); color:#fff; font-size:0.7rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-left:8px; vertical-align:middle;">#${escapeHTML(proj.projectNumber)}</span>` : '';
     card.innerHTML = `
-      <h3>${escapeHTML(proj.name)}</h3>
+      <h3>${escapeHTML(proj.name)} ${numBadge}</h3>
       <p>${escapeHTML(proj.description || 'No description provided.')}</p>
       
       ${customerHtml}
@@ -752,7 +760,8 @@ function renderKanbanBoard() {
   const selectFilter = document.getElementById('board-project-filter');
   selectFilter.innerHTML = '<option value="all">All Shared Projects</option>';
   state.projects.forEach(p => {
-    selectFilter.innerHTML += `<option value="${p.id}">${escapeHTML(p.name)}</option>`;
+    const codeStr = p.projectNumber ? '[' + p.projectNumber + '] ' : '';
+    selectFilter.innerHTML += `<option value="${p.id}">${escapeHTML(codeStr + p.name)}</option>`;
   });
   selectFilter.value = projectFilter;
 
@@ -1266,8 +1275,9 @@ function renderKanbanCards(filteredTasks) {
     const isManager = (role === 'admin' || role === 'project_manager');
     const canEdit = isManager || isCreator || isAssignee;
 
+    const pCode = proj && proj.projectNumber ? `<span style="background:var(--primary-color); color:#fff; font-size:0.6rem; font-weight:700; padding:1px 4px; border-radius:3px; margin-right:4px;">#${escapeHTML(proj.projectNumber)}</span>` : '';
     card.innerHTML = `
-      <div class="kanban-card-project">${escapeHTML(projName)}</div>
+      <div class="kanban-card-project">${pCode}${escapeHTML(projName)}</div>
       <h4>${escapeHTML(task.title)}</h4>
       <span class="priority-pill pill-${task.priority}">${task.priority}</span>
       
@@ -1335,9 +1345,10 @@ function renderListTasks(filteredTasks) {
     const canEdit = isManager || isCreator || isAssignee;
 
     const tr = document.createElement('tr');
+    const pCode = proj && proj.projectNumber ? `<span style="display:inline-block; background:#e2e8f0; color:#334155; font-size:0.68rem; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px;">#${escapeHTML(proj.projectNumber)}</span>` : '';
     tr.innerHTML = `
       <td><strong>${escapeHTML(task.title)}</strong></td>
-      <td>${escapeHTML(projName)}</td>
+      <td>${pCode}${escapeHTML(projName)}</td>
       <td>${escapeHTML(assigneeName)}</td>
       <td><span class="priority-pill pill-${task.priority}">${task.priority}</span></td>
       <td>${task.dueDate || 'No Date'}</td>
@@ -1665,7 +1676,8 @@ async function openTaskFormModal(taskId = null) {
     : state.projects.filter(p => p.members && p.members.includes(state.currentUser.id));
   
   allowedProj.forEach(p => {
-    projectSelect.innerHTML += `<option value="${p.id}">${escapeHTML(p.name)}</option>`;
+    const codeStr = p.projectNumber ? '[' + p.projectNumber + '] ' : '';
+    projectSelect.innerHTML += `<option value="${p.id}">${escapeHTML(codeStr + p.name)}</option>`;
   });
 
   // Populate department filter choices
@@ -1827,6 +1839,7 @@ async function openProjectFormModal(projId = null) {
 
     document.getElementById('project-id-field').value = proj.id;
     document.getElementById('project-name').value = proj.name;
+    document.getElementById('project-number').value = proj.projectNumber || '';
     document.getElementById('project-description').value = proj.description;
     document.getElementById('project-startdate').value = proj.startDate;
     document.getElementById('project-enddate').value = proj.endDate;
@@ -1841,6 +1854,7 @@ async function openProjectFormModal(projId = null) {
   } else {
     document.getElementById('project-modal-title').textContent = 'Create Project';
     document.getElementById('project-id-field').value = '';
+    document.getElementById('project-number').value = '';
   }
 
   modal.classList.add('active');
@@ -2877,6 +2891,7 @@ function setupEventListeners() {
     e.preventDefault();
     const projId = document.getElementById('project-id-field').value;
     const name = document.getElementById('project-name').value;
+    const projectNumber = document.getElementById('project-number').value;
     const description = document.getElementById('project-description').value;
     const startDate = document.getElementById('project-startdate').value;
     const endDate = document.getElementById('project-enddate').value;
@@ -2885,7 +2900,7 @@ function setupEventListeners() {
     const checkboxes = document.querySelectorAll('#project-members-checkboxes input[type="checkbox"]:checked');
     const members = Array.from(checkboxes).map(cb => cb.value);
 
-    const body = { name, description, startDate, endDate, members, customerName };
+    const body = { name, projectNumber, description, startDate, endDate, members, customerName };
 
     try {
       let savedProject;
@@ -3146,8 +3161,16 @@ function setupEventListeners() {
       alert('Please select a project first.');
       return;
     }
+    populateBOMSupplierDropdowns();
     document.getElementById('bom-form').reset();
     document.getElementById('bom-id-field').value = '';
+    document.getElementById('bom-winner').innerHTML = `
+      <option value="">-- Select Winner --</option>
+      <option value="Supplier A">Supplier A</option>
+      <option value="Supplier B">Supplier B</option>
+      <option value="Supplier C">Supplier C</option>
+      <option value="None">None (Under Review)</option>
+    `;
     document.getElementById('bom-winner').value = '';
     document.getElementById('bom-modal-title').textContent = 'Add BOM Item';
     document.getElementById('bom-error').classList.add('hidden');
@@ -4716,14 +4739,30 @@ function populateBOMProjectDropdown() {
   if (!select) return;
   
   const currentVal = select.value;
-  select.innerHTML = '<option value="">Select Project...</option>' + 
-    state.projects.map(p => '<option value="' + p.id + '">' + escapeHTML(p.name) + '</option>').join('');
+  select.innerHTML = '<option value="">— Select Project —</option>' + 
+    state.projects.map(p => {
+      const codeStr = p.projectNumber ? '[' + p.projectNumber + '] ' : '';
+      return '<option value="' + p.id + '">' + escapeHTML(codeStr + p.name) + '</option>';
+    }).join('');
   
   if (currentVal && state.projects.some(p => p.id === currentVal)) {
     select.value = currentVal;
   } else if (state.projects.length > 0) {
-    // Select first project automatically
     select.value = state.projects[0].id;
+  }
+
+  // Attach onchange if not already attached
+  if (!select._bomChangeAttached) {
+    select._bomChangeAttached = true;
+    select.addEventListener('change', async function() {
+      if (this.value) {
+        await fetchBOMItems(this.value);
+      } else {
+        state.bomItems = [];
+      }
+      renderBOMDashboard();
+      renderBOMTable();
+    });
   }
 }
 
@@ -4794,6 +4833,25 @@ function renderBOMTable() {
         '<small style="color:var(--text-secondary);">Del: ' + escapeHTML(getWinnerDelivery(item)) + '</small>'
       : '<span style="color:#ef4444; font-weight:bold; font-size:0.75rem;">Under Review</span>';
 
+    // Manufacturing process progress
+    const ps = item.processStages || {};
+    const stageKeys = ['rmOrder','rmReceipt','manufacturing','surfaceTreatment','issueToAssembly'];
+    const doneCount = stageKeys.filter(k => {
+      const s = ps[k];
+      if (!s) return false;
+      if (k === 'surfaceTreatment' && s.status === 'Not Required') return true;
+      return s.status && s.status !== 'Pending';
+    }).length;
+    const pct = Math.round((doneCount / 5) * 100);
+    const mfgAssigned = ps.manufacturing?.assignedTo || 'Fab';
+    const progColor = pct === 100 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#6366f1';
+    const progressHtml = '<div style="display:flex;align-items:center;gap:6px;">' +
+      '<div style="flex:1;height:5px;background:#e2e8f0;border-radius:4px;min-width:48px;">' +
+        '<div style="height:100%;width:' + pct + '%;background:' + progColor + ';border-radius:4px;"></div>' +
+      '</div>' +
+      '<span style="font-size:0.68rem;color:var(--text-secondary);white-space:nowrap;">' + doneCount + '/5</span>' +
+    '</div>';
+
     return '<tr class="' + (isOverdue ? 'bom-overdue' : '') + '">' +
       '<td><strong>' + escapeHTML(item.itemCode || '—') + '</strong></td>' +
       '<td>' + escapeHTML(item.description || '—') + '</td>' +
@@ -4807,13 +4865,137 @@ function renderBOMTable() {
         '</select>' +
       '</td>' +
       '<td>' +
-        '<div style="display:flex; gap:6px;">' +
-          '<button class="btn-icon btn-edit-bom" data-id="' + item.id + '" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>' +
-          '<button class="btn-icon text-danger btn-delete-bom" data-id="' + item.id + '" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          progressHtml +
+          '<div style="display:flex;gap:4px;">' +
+            '<button class="btn-icon btn-bom-process" data-id="' + item.id + '" data-project="' + projectId + '" title="Manufacturing Process Tracker" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:3px 7px;font-size:0.75rem;cursor:pointer;">🏭</button>' +
+            '<button class="btn-icon btn-edit-bom" data-id="' + item.id + '" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>' +
+            '<button class="btn-icon text-danger btn-delete-bom" data-id="' + item.id + '" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>' +
+          '</div>' +
         '</div>' +
       '</td>' +
       '</tr>';
   }).join('');
+
+  // Attach process button listeners
+  tbody.querySelectorAll('.btn-bom-process').forEach(btn => {
+    btn.addEventListener('click', () => openBOMProcessModal(btn.dataset.id, btn.dataset.project));
+  });
+}
+
+// ==================== BOM MANUFACTURING PROCESS TRACKER ====================
+
+function toggleMfgSupplierField() {
+  const sel = document.getElementById('ps-manufacturing-assignedTo');
+  const field = document.getElementById('mfg-supplier-field');
+  if (sel && field) field.style.display = sel.value === '3P Supplier' ? 'block' : 'none';
+}
+
+function openBOMProcessModal(itemId, projectId) {
+  const item = state.bomItems.find(i => i.id === itemId);
+  if (!item) return;
+
+  document.getElementById('bom-process-item-id').value = itemId;
+  document.getElementById('bom-process-project-id').value = projectId;
+  document.getElementById('bom-process-item-label').textContent =
+    item.itemCode + ' — ' + item.description;
+
+  const ps = item.processStages || {};
+
+  // Stage 1: RM Order
+  const rm = ps.rmOrder || {};
+  document.getElementById('ps-rmOrder-status').value = rm.status || 'Pending';
+  document.getElementById('ps-rmOrder-orderedDate').value = rm.orderedDate || '';
+  document.getElementById('ps-rmOrder-expectedDate').value = rm.expectedDate || '';
+  document.getElementById('ps-rmOrder-notes').value = rm.notes || '';
+
+  // Stage 2: RM Receipt
+  const rr = ps.rmReceipt || {};
+  document.getElementById('ps-rmReceipt-status').value = rr.status || 'Pending';
+  document.getElementById('ps-rmReceipt-receivedDate').value = rr.receivedDate || '';
+  document.getElementById('ps-rmReceipt-qtyReceived').value = rr.qtyReceived || '';
+  document.getElementById('ps-rmReceipt-notes').value = rr.notes || '';
+
+  // Stage 3: Manufacturing
+  const mfg = ps.manufacturing || {};
+  document.getElementById('ps-manufacturing-assignedTo').value = mfg.assignedTo || 'Fabrication';
+  document.getElementById('ps-manufacturing-status').value = mfg.status || 'Pending';
+  document.getElementById('ps-manufacturing-supplierName').value = mfg.supplierName || '';
+  document.getElementById('ps-manufacturing-startDate').value = mfg.startDate || '';
+  document.getElementById('ps-manufacturing-completedDate').value = mfg.completedDate || '';
+  document.getElementById('ps-manufacturing-notes').value = mfg.notes || '';
+  toggleMfgSupplierField();
+
+  // Stage 4: Surface Treatment
+  const st = ps.surfaceTreatment || {};
+  document.getElementById('ps-surfaceTreatment-status').value = st.status || 'Not Required';
+  document.getElementById('ps-surfaceTreatment-type').value = st.type || '';
+  document.getElementById('ps-surfaceTreatment-sentDate').value = st.sentDate || '';
+  document.getElementById('ps-surfaceTreatment-receivedDate').value = st.receivedDate || '';
+  document.getElementById('ps-surfaceTreatment-notes').value = st.notes || '';
+
+  // Stage 5: Issue to Assembly
+  const ia = ps.issueToAssembly || {};
+  document.getElementById('ps-issueToAssembly-status').value = ia.status || 'Pending';
+  document.getElementById('ps-issueToAssembly-issuedDate').value = ia.issuedDate || '';
+  document.getElementById('ps-issueToAssembly-qtyIssued').value = ia.qtyIssued || '';
+  document.getElementById('ps-issueToAssembly-notes').value = ia.notes || '';
+
+  openModal('modal-bom-process');
+}
+
+async function saveBOMProcess() {
+  const itemId = document.getElementById('bom-process-item-id').value;
+  const projectId = document.getElementById('bom-process-project-id').value;
+  if (!itemId || !projectId) return;
+
+  const stages = {
+    rmOrder: {
+      status: document.getElementById('ps-rmOrder-status').value,
+      orderedDate: document.getElementById('ps-rmOrder-orderedDate').value,
+      expectedDate: document.getElementById('ps-rmOrder-expectedDate').value,
+      notes: document.getElementById('ps-rmOrder-notes').value
+    },
+    rmReceipt: {
+      status: document.getElementById('ps-rmReceipt-status').value,
+      receivedDate: document.getElementById('ps-rmReceipt-receivedDate').value,
+      qtyReceived: document.getElementById('ps-rmReceipt-qtyReceived').value,
+      notes: document.getElementById('ps-rmReceipt-notes').value
+    },
+    manufacturing: {
+      assignedTo: document.getElementById('ps-manufacturing-assignedTo').value,
+      supplierName: document.getElementById('ps-manufacturing-supplierName').value,
+      status: document.getElementById('ps-manufacturing-status').value,
+      startDate: document.getElementById('ps-manufacturing-startDate').value,
+      completedDate: document.getElementById('ps-manufacturing-completedDate').value,
+      notes: document.getElementById('ps-manufacturing-notes').value
+    },
+    surfaceTreatment: {
+      status: document.getElementById('ps-surfaceTreatment-status').value,
+      type: document.getElementById('ps-surfaceTreatment-type').value,
+      sentDate: document.getElementById('ps-surfaceTreatment-sentDate').value,
+      receivedDate: document.getElementById('ps-surfaceTreatment-receivedDate').value,
+      notes: document.getElementById('ps-surfaceTreatment-notes').value
+    },
+    issueToAssembly: {
+      status: document.getElementById('ps-issueToAssembly-status').value,
+      issuedDate: document.getElementById('ps-issueToAssembly-issuedDate').value,
+      qtyIssued: document.getElementById('ps-issueToAssembly-qtyIssued').value,
+      notes: document.getElementById('ps-issueToAssembly-notes').value
+    }
+  };
+
+  try {
+    const updated = await apiCall('/api/projects/' + projectId + '/bom/' + itemId + '/process', 'PUT', stages);
+    // Update local state
+    const idx = state.bomItems.findIndex(i => i.id === itemId);
+    if (idx !== -1) state.bomItems[idx] = updated;
+    closeModal('modal-bom-process');
+    renderBOMTable();
+    showToast('✅ Process stages saved!', 'success');
+  } catch (err) {
+    alert('Error saving process: ' + err.message);
+  }
 }
 
 async function handleBOMSubmit(e) {
@@ -4835,17 +5017,17 @@ async function handleBOMSubmit(e) {
     status: document.getElementById('bom-status').value,
     
     // Supplier Quotes
-    supplierA_name: document.getElementById('bom-supA-name').value.trim(),
+    supplierA_name: document.getElementById('bom-supA-name').value,
     supplierA_price: parseFloat(document.getElementById('bom-supA-price').value) || 0,
     supplierA_leadTime: document.getElementById('bom-supA-delivery').value.trim(),
     supplierA_payment: document.getElementById('bom-supA-payment').value.trim(),
     
-    supplierB_name: document.getElementById('bom-supB-name').value.trim(),
+    supplierB_name: document.getElementById('bom-supB-name').value,
     supplierB_price: parseFloat(document.getElementById('bom-supB-price').value) || 0,
     supplierB_leadTime: document.getElementById('bom-supB-delivery').value.trim(),
     supplierB_payment: document.getElementById('bom-supB-payment').value.trim(),
     
-    supplierC_name: document.getElementById('bom-supC-name').value.trim(),
+    supplierC_name: document.getElementById('bom-supC-name').value,
     supplierC_price: parseFloat(document.getElementById('bom-supC-price').value) || 0,
     supplierC_leadTime: document.getElementById('bom-supC-delivery').value.trim(),
     supplierC_payment: document.getElementById('bom-supC-payment').value.trim(),
@@ -4920,6 +5102,9 @@ function handleBOMEdit(bomId) {
   document.getElementById('bom-target-date').value = item.targetDate || '';
   document.getElementById('bom-status').value = item.status || 'Draft';
 
+  // Populate supplier select elements before setting values
+  populateBOMSupplierDropdowns();
+
   // Supplier A
   document.getElementById('bom-supA-name').value = item.supplierA_name || '';
   document.getElementById('bom-supA-price').value = item.supplierA_price || '';
@@ -4938,7 +5123,16 @@ function handleBOMEdit(bomId) {
   document.getElementById('bom-supC-delivery').value = item.supplierC_leadTime || '';
   document.getElementById('bom-supC-payment').value = item.supplierC_payment || '';
 
-  document.getElementById('bom-winner').value = item.winner || '';
+  // Populate Winner Dropdown dynamically based on selected A/B/C values
+  const winnerSel = document.getElementById('bom-winner');
+  winnerSel.innerHTML = `
+    <option value="">-- Select Winner --</option>
+    ${item.supplierA_name ? `<option value="Supplier A">Supplier A (${escapeHTML(item.supplierA_name)})</option>` : '<option value="Supplier A">Supplier A</option>'}
+    ${item.supplierB_name ? `<option value="Supplier B">Supplier B (${escapeHTML(item.supplierB_name)})</option>` : '<option value="Supplier B">Supplier B</option>'}
+    ${item.supplierC_name ? `<option value="Supplier C">Supplier C (${escapeHTML(item.supplierC_name)})</option>` : '<option value="Supplier C">Supplier C</option>'}
+    <option value="None">None (Under Review)</option>
+  `;
+  winnerSel.value = item.winner || '';
 
   document.getElementById('bom-modal-title').textContent = 'Edit BOM Item';
   document.getElementById('bom-error').classList.add('hidden');
@@ -5629,3 +5823,155 @@ async function onPRFormSubmit(e) {
     }
   }
 }
+
+// ==================== SUPPLIER DIRECTORY UI LOGIC ====================
+
+function populateBOMSupplierDropdowns() {
+  const selects = document.querySelectorAll('.bom-supplier-select');
+  selects.forEach(select => {
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">Select Supplier...</option>' +
+      state.suppliers.map(s => `<option value="${escapeHTML(s.name)}">${escapeHTML(s.name)} [${escapeHTML(s.category)}]</option>`).join('');
+    if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+      select.value = currentVal;
+    }
+  });
+
+  // Re-populates winner dropdown dynamically on change
+  const rebindWinners = () => {
+    const supA = document.getElementById('bom-supA-name').value;
+    const supB = document.getElementById('bom-supB-name').value;
+    const supC = document.getElementById('bom-supC-name').value;
+    const winnerSel = document.getElementById('bom-winner');
+    const prevWinner = winnerSel.value;
+    
+    winnerSel.innerHTML = `
+      <option value="">-- Select Winner --</option>
+      <option value="Supplier A">Supplier A ${supA ? '('+escapeHTML(supA)+')' : ''}</option>
+      <option value="Supplier B">Supplier B ${supB ? '('+escapeHTML(supB)+')' : ''}</option>
+      <option value="Supplier C">Supplier C ${supC ? '('+escapeHTML(supC)+')' : ''}</option>
+      <option value="None">None (Under Review)</option>
+    `;
+    winnerSel.value = prevWinner;
+  };
+
+  ['bom-supA-name', 'bom-supB-name', 'bom-supC-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el._winnerBinded) {
+      el._winnerBinded = true;
+      el.addEventListener('change', rebindWinners);
+    }
+  });
+}
+
+function openSupplierDirectoryModal() {
+  renderSupplierDirectory();
+  openModal('modal-supplier-directory');
+}
+
+function renderSupplierDirectory() {
+  const tbody = document.getElementById('supplier-directory-tbody');
+  if (!tbody) return;
+
+  const searchVal = document.getElementById('supplier-search-input')?.value.toLowerCase() || '';
+  const filtered = state.suppliers.filter(s => 
+    s.name.toLowerCase().includes(searchVal) ||
+    (s.contactPerson && s.contactPerson.toLowerCase().includes(searchVal)) ||
+    (s.gstNumber && s.gstNumber.toLowerCase().includes(searchVal))
+  );
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-secondary);">No suppliers found in directory.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => `
+    <tr style="border-bottom:1px solid #e2e8f0;">
+      <td style="padding:12px 16px;"><strong>${escapeHTML(s.name)}</strong></td>
+      <td style="padding:12px 16px;"><span class="rfq-status-badge rfq-s-new" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;">${escapeHTML(s.category)}</span></td>
+      <td style="padding:12px 16px;">${escapeHTML(s.contactPerson || '—')}</td>
+      <td style="padding:12px 16px;">
+        ${s.phone ? `📞 ${escapeHTML(s.phone)}<br>` : ''}
+        ${s.email ? `✉️ ${escapeHTML(s.email)}` : ''}
+      </td>
+      <td style="padding:12px 16px;"><code>${escapeHTML(s.gstNumber || '—')}</code></td>
+      <td style="padding:12px 16px;text-align:right;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openEditSupplierModal('${s.id}')" style="margin-right:4px;">Edit</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteSupplier('${s.id}')">Deactivate</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openAddSupplierModal() {
+  document.getElementById('supplier-form').reset();
+  document.getElementById('supplier-id-field').value = '';
+  document.getElementById('supplier-form-title').textContent = 'Register Supplier';
+  openModal('modal-supplier-form');
+}
+
+function openEditSupplierModal(supId) {
+  const s = state.suppliers.find(item => item.id === supId);
+  if (!s) return;
+
+  document.getElementById('supplier-id-field').value = s.id;
+  document.getElementById('supplier-name').value = s.name;
+  document.getElementById('supplier-category').value = s.category;
+  document.getElementById('supplier-gst').value = s.gstNumber || '';
+  document.getElementById('supplier-contact').value = s.contactPerson || '';
+  document.getElementById('supplier-phone').value = s.phone || '';
+  document.getElementById('supplier-email').value = s.email || '';
+  document.getElementById('supplier-payment').value = s.paymentTerms || '';
+  document.getElementById('supplier-leadtime').value = s.leadTime || '';
+
+  document.getElementById('supplier-form-title').textContent = 'Edit Supplier';
+  openModal('modal-supplier-form');
+}
+
+async function deleteSupplier(supId) {
+  if (!confirm('Are you sure you want to deactivate this supplier? They will no longer appear in dropdowns.')) return;
+  try {
+    await apiCall(`/api/suppliers/${supId}`, 'DELETE');
+    await fetchSuppliers();
+    renderSupplierDirectory();
+    showToast('Supplier deactivated successfully.');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// Bind Supplier Directory trigger & form submission inside setupListeners
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-manage-suppliers')?.addEventListener('click', openSupplierDirectoryModal);
+  document.getElementById('supplier-search-input')?.addEventListener('input', renderSupplierDirectory);
+  
+  document.getElementById('supplier-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('supplier-id-field').value;
+    const payload = {
+      name: document.getElementById('supplier-name').value.trim(),
+      category: document.getElementById('supplier-category').value,
+      gstNumber: document.getElementById('supplier-gst').value.trim(),
+      contactPerson: document.getElementById('supplier-contact').value.trim(),
+      phone: document.getElementById('supplier-phone').value.trim(),
+      email: document.getElementById('supplier-email').value.trim(),
+      paymentTerms: document.getElementById('supplier-payment').value.trim(),
+      leadTime: document.getElementById('supplier-leadtime').value.trim()
+    };
+
+    try {
+      if (id) {
+        await apiCall(`/api/suppliers/${id}`, 'PUT', payload);
+        showToast('Supplier updated successfully.');
+      } else {
+        await apiCall('/api/suppliers', 'POST', payload);
+        showToast('Supplier registered successfully.');
+      }
+      closeModal('modal-supplier-form');
+      await fetchSuppliers();
+      renderSupplierDirectory();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+});
