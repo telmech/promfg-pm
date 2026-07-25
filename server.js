@@ -968,7 +968,7 @@ app.post('/api/notifications/check-due-dates', authenticateToken, (req, res) => 
 
 
 // ==================== BOM PROCESS STAGES API ====================
-app.put('/api/projects/:projectId/bom/:itemId/process', authenticateToken, requireBOMAccess, (req, res) => {
+app.put('/api/projects/:projectId/bom/:itemId/process', authenticateToken, requirePurchasingOrAdmin, (req, res) => {
   try {
     const { projectId, itemId } = req.params;
     const stages = req.body;
