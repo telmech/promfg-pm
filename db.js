@@ -690,7 +690,7 @@ module.exports = {
       orgId,
       notification.userId,
       notification.type || '',
-      notification.message,
+      notification.message || notification.text || '',
       0,
       createdAt
     );
