@@ -431,6 +431,10 @@
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Dashboard
       </a>
+      <a class="nav-link" data-page="page-pending">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pending Approvals
+      </a>
       <a class="nav-link" data-page="page-orgs">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Organizations
@@ -481,6 +485,31 @@
           <div class="metric-value" id="m-users">—</div>
           <div class="metric-sub">Across all organizations</div>
         </div>
+      </div>
+    </div>
+
+    <!-- PENDING APPROVALS -->
+    <div class="page" id="page-pending">
+      <div class="page-title">Pending Approvals</div>
+      <div class="page-subtitle">Organizations waiting for verification to access the platform</div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Pending Registrations</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Organization</th>
+              <th>Admin Name</th>
+              <th>Admin Email</th>
+              <th>Registration Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pending-tbody">
+            <tr><td colspan="5" class="loading-state"><span class="spinner"></span> Loading pending approvals...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -594,6 +623,7 @@
     const appEl = document.getElementById('app-screen');
     appEl.style.display = 'flex';
     loadDashboard();
+    loadPendingApprovals();
     loadOrganizations();
     loadPlans();
   }
@@ -610,7 +640,14 @@
       document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       link.classList.add('active');
-      document.getElementById(link.getAttribute('data-page')).classList.add('active');
+      const targetPage = link.getAttribute('data-page');
+      document.getElementById(targetPage).classList.add('active');
+      
+      if (targetPage === 'page-pending') {
+        loadPendingApprovals();
+      } else if (targetPage === 'page-orgs') {
+        loadOrganizations();
+      }
     });
   });
 
@@ -702,6 +739,53 @@
       const data = await api(`/api/owner/impersonate/${orgId}`, 'POST');
       localStorage.setItem('token', data.token);
       window.open('/', '_blank');
+    } catch(e) { alert(e.message); }
+  }
+
+  async function loadPendingApprovals() {
+    const tbody = document.getElementById('pending-tbody');
+    try {
+      const pending = await api('/api/owner/pending-signups');
+      if (!pending.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#9ca3af;">No pending registrations.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = pending.map(p => `
+        <tr>
+          <td><strong>${esc(p.orgName)}</strong><br><span style="font-size:0.72rem;color:#9ca3af;font-family:monospace;">${p.orgId}</span></td>
+          <td>${esc(p.adminName)}</td>
+          <td>${esc(p.adminEmail)}</td>
+          <td>${new Date(p.createdAt).toLocaleDateString()}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="approveOrg('${p.orgId}', '${esc(p.orgName)}')">Approve</button>
+            <button class="btn btn-sm btn-danger" onclick="rejectOrg('${p.orgId}', '${esc(p.orgName)}')">Reject</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="5" style="color:red;text-align:center;padding:24px;">${e.message}</td></tr>`;
+    }
+  }
+
+  window.approveOrg = async function(orgId, name) {
+    if (!confirm(`Approve and activate workspace for "${name}"?`)) return;
+    try {
+      await api(`/api/owner/approve-org/${orgId}`, 'POST');
+      alert(`Workspace "${name}" approved successfully!`);
+      loadPendingApprovals();
+      loadOrganizations();
+      loadDashboard();
+    } catch(e) { alert(e.message); }
+  }
+
+  window.rejectOrg = async function(orgId, name) {
+    if (!confirm(`Reject and delete registration request for "${name}"? This cannot be undone.`)) return;
+    try {
+      await api(`/api/owner/reject-org/${orgId}`, 'POST');
+      alert(`Registration for "${name}" rejected.`);
+      loadPendingApprovals();
+      loadOrganizations();
+      loadDashboard();
     } catch(e) { alert(e.message); }
   }
 
