@@ -29,7 +29,56 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-  // Client connected and joined their org room
+  if (socket.user) {
+    if (socket.user.orgId) socket.join(socket.user.orgId);
+    if (socket.user.id) socket.join('user_' + socket.user.id);
+  }
+
+  // Handle incoming real-time chat message from clients (group & direct messages)
+  socket.on('send_chat_message', (payload) => {
+    if (!socket.user || !socket.user.orgId) return;
+    try {
+      // Resolve user's live name from DB to prevent NULL constraint failures
+      const user = db.getUserById(socket.user.id);
+      const userName = user ? user.name : 'Unknown User';
+
+      // Parse payload (can be a plain string for backward compatibility or an object)
+      const msgText = typeof payload === 'string' ? payload : (payload.message || '');
+      const recipientId = typeof payload === 'object' ? (payload.recipientId || null) : null;
+
+      const msgObj = db.saveChatMessage(
+        socket.user.orgId,
+        socket.user.id,
+        userName,
+        msgText,
+        recipientId
+      );
+
+      if (!recipientId || recipientId === 'group') {
+        // Broadcast to group chat
+        io.to(socket.user.orgId).emit('receive_chat_message', msgObj);
+      } else {
+        // Send to recipient private room and sender private room (on all active sessions/tabs)
+        io.to('user_' + recipientId).emit('receive_chat_message', msgObj);
+        io.to('user_' + socket.user.id).emit('receive_chat_message', msgObj);
+      }
+    } catch (err) {
+      console.error('Error broadcasting chat message:', err.message);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    if (socket.user && socket.user.role !== 'owner') {
+      try {
+        const fullUser = db.getUserById(socket.user.id);
+        if (fullUser) {
+          db.logUserLogout(socket.user.orgId, socket.user.id, fullUser.name, socket.user.email, 'DISCONNECT');
+        }
+      } catch (err) {
+        console.error('Error logging socket disconnect:', err.message);
+      }
+    }
+  });
 });
 
 // Resolve the data directory safely (same as db.js) to support persistent storage volumes (e.g. Render)
@@ -250,6 +299,15 @@ app.post('/api/auth/login', (req, res) => {
     { expiresIn: '7d' }
   );
 
+  // Log successful login (ignore owner)
+  if (user.role !== 'owner') {
+    try {
+      db.logUserLogin(user.orgId, user.id, user.name, user.email);
+    } catch (err) {
+      console.error('Error logging user login:', err.message);
+    }
+  }
+
   res.json({
     token,
     user: {
@@ -266,6 +324,19 @@ app.post('/api/auth/login', (req, res) => {
       trialEndsAt: org.trialEndsAt
     }
   });
+});
+
+app.post('/api/auth/logout', authenticateToken, (req, res) => {
+  if (req.user && req.user.role !== 'owner') {
+    try {
+      const fullUser = db.getUserById(req.user.id);
+      const userName = fullUser ? fullUser.name : 'Unknown User';
+      db.logUserLogout(req.user.orgId, req.user.id, userName, req.user.email, 'LOGOUT');
+    } catch (err) {
+      console.error('Error logging user logout:', err.message);
+    }
+  }
+  res.json({ message: 'Logged out successfully.' });
 });
 
 app.post('/api/auth/signup', (req, res) => {
@@ -925,6 +996,18 @@ app.get('/api/notifications', authenticateToken, (req, res) => {
   res.json(notifications);
 });
 
+// Chat History API
+app.get('/api/chat', authenticateToken, (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const recipientId = req.query.recipientId || null;
+    const history = db.getChatMessages(req.user.orgId, req.user.id, recipientId, limit);
+    res.json(history);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.put('/api/notifications/:id/read', authenticateToken, (req, res) => {
   const updated = db.markNotificationRead(req.user.orgId, req.params.id, req.user.id);
   if (!updated) return res.status(404).json({ error: 'Notification not found.' });
@@ -1145,6 +1228,50 @@ app.post('/api/owner/impersonate/:orgId', authenticateToken, requireOwnerRights,
       { expiresIn: '2h' }
     );
     res.json({ token: impersonationToken, user: targetUser });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET Login Logs (SaaS Owner only)
+app.get('/api/owner/login-logs', authenticateToken, requireOwnerRights, (req, res) => {
+  try {
+    const logs = db.getDailyLoginLogsForOwner(100);
+    res.json(logs);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET Usage Metrics (SaaS Owner only)
+app.get('/api/owner/usage-metrics', authenticateToken, requireOwnerRights, (req, res) => {
+  try {
+    const metrics = db.getPlatformUsageMetrics();
+    res.json(metrics);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET Monitor Chat for Org (SaaS Owner only)
+app.get('/api/owner/chats/:orgId', authenticateToken, requireOwnerRights, (req, res) => {
+  try {
+    const { userId, recipientId } = req.query;
+    // If recipientId is specified, audit private DMs; otherwise load group chat history
+    const history = db.getChatMessages(req.params.orgId, userId || 'owner', recipientId || 'group', 100);
+    res.json(history);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET Users under an Organization (SaaS Owner only)
+app.get('/api/owner/users/:orgId', authenticateToken, requireOwnerRights, (req, res) => {
+  try {
+    const users = db.getAllUsersAllOrgs()
+      .filter(u => u.orgId === req.params.orgId)
+      .map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, status: u.status }));
+    res.json(users);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

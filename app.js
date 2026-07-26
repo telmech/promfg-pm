@@ -12,6 +12,7 @@ const state = {
   settings: { companyName: 'PRO-MFG', companyLogo: '' },
   currentView: 'dashboard',
   selectedTaskId: null,
+  currentChatTarget: 'group',
   theme: localStorage.getItem('pm_theme') || 'light'
 };
 
@@ -125,6 +126,8 @@ function navigateTo(viewId) {
     'team': 'Team Management',
     'rfq': 'RFQ Tracking',
     'bom': 'BOM Tracking',
+    'pr': 'PR Tracking',
+    'chat': 'Team Chat Room',
     'reports': 'Reports & Analytics'
   };
   document.getElementById('view-title').textContent = titleMap[viewId] || 'Project & Task Manager';
@@ -188,6 +191,9 @@ async function fetchViewData(viewId) {
       await Promise.all([fetchProjects(), fetchPRs()]);
       renderPRDashboard();
       renderPRTable();
+    } else if (viewId === 'chat') {
+      await Promise.all([fetchUsers(), fetchChatHistory()]);
+      renderChatTeammates();
     }
   } catch (err) {
     console.error('Failed to load data for view:', viewId, err);
@@ -396,7 +402,14 @@ function showApp() {
   }
 }
 
-function logout() {
+async function logout() {
+  if (state.token) {
+    try {
+      await apiCall('/api/auth/logout', 'POST');
+    } catch (err) {
+      console.warn('Logout API call failed:', err);
+    }
+  }
   state.token = '';
   state.currentUser = null;
   localStorage.removeItem('pm_token');
@@ -603,19 +616,12 @@ function renderDashboard() {
     const assigneeIds = [...new Set(state.tasks.map(t => t.assigneeId).filter(Boolean))];
     if (!assigneeIds.includes(state.currentUser.id)) assigneeIds.push(state.currentUser.id);
     
-    const hardcodedNames = {
-      'u1': 'Super Admin',
-      'u4': 'System Admin',
-      'u5': 'Project Manager',
-      'u2': 'Alice Johnson',
-      'u3': 'Bob Smith'
-    };
-
     usersToDisplay = assigneeIds.map(id => {
       if (id === state.currentUser.id) return state.currentUser;
+      const foundUser = state.users.find(u => u.id === id);
       return {
         id,
-        name: hardcodedNames[id] || 'User ' + id,
+        name: foundUser ? foundUser.name : ('User ' + id),
         status: 'active'
       };
     });
@@ -3234,6 +3240,9 @@ function setupEventListeners() {
 
   // Init Supplier Directory Bindings
   setupSupplierDirectoryBindings();
+
+  // Init Team Chat Bindings
+  setupChatBindings();
 }
 
 // ==================== UI UTILITIES ====================
@@ -3512,6 +3521,39 @@ function initSocket() {
 
   socket.on('connect', () => {
     console.log('Connected to real-time server');
+  });
+
+  socket.on('receive_chat_message', (msgObj) => {
+    const isGroupMsg = !msgObj.recipientId || msgObj.recipientId === 'group';
+    const isCurrentActiveChat = isGroupMsg 
+      ? (state.currentChatTarget === 'group')
+      : (state.currentChatTarget === msgObj.userId || (msgObj.userId === state.currentUser?.id && state.currentChatTarget === msgObj.recipientId));
+
+    if (state.currentView === 'chat' && isCurrentActiveChat) {
+      appendSingleChatMessage(msgObj);
+      scrollChatToBottom();
+    } else {
+      // Show notification toast if the message is from another teammate
+      if (msgObj.userId !== state.currentUser?.id) {
+        showToast(`💬 New ${isGroupMsg ? 'Group' : 'Private'} message from ${msgObj.userName}: "${msgObj.message.substring(0, 25)}..."`, 'success');
+        
+        // Highlight the unread source inside teammates list if currently viewing chat tab
+        if (state.currentView === 'chat') {
+          const targetId = isGroupMsg ? 'group' : msgObj.userId;
+          const targetEl = document.querySelector(`.chat-target-item[data-id="${targetId}"]`);
+          if (targetEl) {
+            targetEl.style.fontWeight = '800';
+            targetEl.style.background = '#f1f5f9';
+            const badge = targetEl.querySelector('.chat-unread-badge');
+            if (badge) {
+              const currentCount = parseInt(badge.textContent) || 0;
+              badge.textContent = currentCount + 1;
+              badge.classList.remove('hidden');
+            }
+          }
+        }
+      }
+    }
   });
 
   socket.on('data_updated', async () => {
@@ -6086,6 +6128,181 @@ function setupSupplierDirectoryBindings() {
       renderSupplierDirectory();
     } catch (err) {
       alert(err.message);
+    }
+  });
+}
+
+// ==================== INTERNAL CHAT MODULE ====================
+async function fetchChatHistory() {
+  const container = document.getElementById('chat-messages-container');
+  if (!container) return;
+  
+  container.innerHTML = '<div class="loading-state" style="text-align:center; padding:20px; color:var(--text-secondary);"><span class="spinner"></span> Loading conversation...</div>';
+
+  try {
+    const targetQuery = state.currentChatTarget === 'group' ? '' : `?recipientId=${state.currentChatTarget}`;
+    const messages = await apiCall(`/api/chat${targetQuery}`);
+    renderChat(messages);
+  } catch (err) {
+    container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Failed to load chat history: ${err.message}</div>`;
+  }
+}
+
+function renderChat(messages) {
+  const container = document.getElementById('chat-messages-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (messages.length === 0) {
+    container.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:32px; font-style:italic;">No messages in this chat room yet. Start the conversation!</div>';
+    return;
+  }
+
+  messages.forEach(msg => {
+    appendSingleChatMessage(msg);
+  });
+  scrollChatToBottom();
+}
+
+function appendSingleChatMessage(msg) {
+  const container = document.getElementById('chat-messages-container');
+  if (!container) return;
+
+  // Remove empty state message if it is there
+  const emptyState = container.querySelector('[style*="font-style:italic"]');
+  if (emptyState) emptyState.remove();
+
+  const isMe = msg.userId === state.currentUser?.id;
+  const card = document.createElement('div');
+  card.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    align-self: ${isMe ? 'flex-end' : 'flex-start'};
+    max-width: 65%;
+    background: ${isMe ? '#e0f2fe' : '#ffffff'};
+    border: 1px solid ${isMe ? '#bae6fd' : '#e2e8f0'};
+    padding: 10px 14px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    margin-bottom: 8px;
+  `;
+
+  const timeStr = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  card.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:4px;">
+      <span style="font-size:0.75rem; font-weight:700; color:${isMe ? '#0369a1' : '#475569'};">${isMe ? 'You' : escapeHTML(msg.userName)}</span>
+      <span style="font-size:0.65rem; color:#94a3b8;">${timeStr}</span>
+    </div>
+    <div style="font-size:0.88rem; color:#1e293b; line-height:1.4; white-space:pre-wrap; word-break:break-word;">${escapeHTML(msg.message)}</div>
+  `;
+
+  container.appendChild(card);
+}
+
+function renderChatTeammates() {
+  const list = document.getElementById('chat-targets-list');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  // 1. Group Chat Item
+  const groupEl = document.createElement('div');
+  groupEl.className = `chat-target-item ${state.currentChatTarget === 'group' ? 'active' : ''}`;
+  groupEl.setAttribute('data-id', 'group');
+  groupEl.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: ${state.currentChatTarget === 'group' ? '700' : '500'};
+    color: ${state.currentChatTarget === 'group' ? 'var(--primary-color)' : '#475569'};
+    background: ${state.currentChatTarget === 'group' ? '#e0f2fe' : 'transparent'};
+    border-left: 3px solid ${state.currentChatTarget === 'group' ? 'var(--primary-color)' : 'transparent'};
+  `;
+  groupEl.innerHTML = `
+    <span>📢 Group Chat</span>
+    <span class="chat-unread-badge hidden" style="background:#ef4444; color:#fff; font-size:0.65rem; padding:2px 6px; border-radius:100px; font-weight:700;">0</span>
+  `;
+  groupEl.addEventListener('click', () => selectChatTarget('group', '📢 Group Chat'));
+  list.appendChild(groupEl);
+
+  // 2. Active Teammates (exclude current user)
+  const teammates = state.users.filter(u => u.id !== state.currentUser?.id && u.status === 'active');
+  teammates.forEach(user => {
+    const isSelected = state.currentChatTarget === user.id;
+    const userEl = document.createElement('div');
+    userEl.className = `chat-target-item ${isSelected ? 'active' : ''}`;
+    userEl.setAttribute('data-id', user.id);
+    userEl.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: ${isSelected ? '700' : '500'};
+      color: ${isSelected ? 'var(--primary-color)' : '#475569'};
+      background: ${isSelected ? '#e0f2fe' : 'transparent'};
+      border-left: 3px solid ${isSelected ? 'var(--primary-color)' : 'transparent'};
+    `;
+    userEl.innerHTML = `
+      <span>👤 ${escapeHTML(user.name)}</span>
+      <span class="chat-unread-badge hidden" style="background:#ef4444; color:#fff; font-size:0.65rem; padding:2px 6px; border-radius:100px; font-weight:700;">0</span>
+    `;
+    userEl.addEventListener('click', () => selectChatTarget(user.id, `👤 ${user.name}`));
+    list.appendChild(userEl);
+  });
+}
+
+async function selectChatTarget(targetId, displayName) {
+  state.currentChatTarget = targetId;
+  
+  // Update header text
+  const header = document.getElementById('chat-active-header');
+  if (header) header.textContent = displayName;
+
+  // Rerender sidebar highlights & clear badge
+  renderChatTeammates();
+  const targetEl = document.querySelector(`.chat-target-item[data-id="${targetId}"]`);
+  if (targetEl) {
+    const badge = targetEl.querySelector('.chat-unread-badge');
+    if (badge) {
+      badge.textContent = '0';
+      badge.classList.add('hidden');
+    }
+  }
+
+  // Load chat history
+  await fetchChatHistory();
+}
+
+function scrollChatToBottom() {
+  const container = document.getElementById('chat-messages-container');
+  if (container) {
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+function setupChatBindings() {
+  const form = document.getElementById('chat-send-form');
+  if (!form) return;
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('chat-input');
+    if (!input || !input.value.trim()) return;
+
+    if (socket && socket.connected) {
+      // Send as object payload to support direct messaging
+      socket.emit('send_chat_message', {
+        message: input.value.trim(),
+        recipientId: state.currentChatTarget
+      });
+      input.value = '';
+    } else {
+      showToast('Connection lost. Unable to send message.', 'error');
     }
   });
 }

@@ -111,6 +111,51 @@ try {
   console.error('PR table migration error:', err.message);
 }
 
+// Migration: Create chat_messages table if not exists
+try {
+  db.prepare(`CREATE TABLE IF NOT EXISTS chat_messages (
+    id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    recipient_id TEXT,
+    created_at TEXT NOT NULL
+  )`).run();
+
+  const chatInfo = db.prepare("PRAGMA table_info(chat_messages)").all();
+  const chatCols = chatInfo.map(c => c.name);
+  if (!chatCols.includes('recipient_id')) {
+    db.prepare("ALTER TABLE chat_messages ADD COLUMN recipient_id TEXT").run();
+    console.log('Migration: Added recipient_id to chat_messages');
+  }
+} catch (err) {
+  console.error('Chat table migration error:', err.message);
+}
+
+// Migration: Create login_logs table if not exists
+try {
+  db.prepare(`CREATE TABLE IF NOT EXISTS login_logs (
+    id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    user_email TEXT NOT NULL,
+    login_date TEXT NOT NULL,
+    action TEXT DEFAULT 'LOGIN',
+    created_at TEXT NOT NULL
+  )`).run();
+
+  const logInfo = db.prepare("PRAGMA table_info(login_logs)").all();
+  const logCols = logInfo.map(c => c.name);
+  if (!logCols.includes('action')) {
+    db.prepare("ALTER TABLE login_logs ADD COLUMN action TEXT DEFAULT 'LOGIN'").run();
+    console.log('Migration: Added action column to login_logs');
+  }
+} catch (err) {
+  console.error('Login logs table migration error:', err.message);
+}
+
 // Self-initialization checking & seeding
 const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
 if (!tableExists) {
@@ -1156,6 +1201,84 @@ module.exports = {
   deleteSupplier: (orgId, id) => {
     db.prepare('UPDATE suppliers SET status = ? WHERE id = ? AND org_id = ?').run('inactive', id, orgId);
     return true;
+  },
+  getChatMessages: (orgId, userId, recipientId = null, limit = 50) => {
+    if (!recipientId || recipientId === 'group') {
+      return db.prepare(`
+        SELECT * FROM chat_messages 
+        WHERE org_id = ? AND (recipient_id IS NULL OR recipient_id = '' OR recipient_id = 'group')
+        ORDER BY created_at DESC LIMIT ?
+      `).all(orgId, limit).reverse().map(mapChat);
+    } else {
+      return db.prepare(`
+        SELECT * FROM chat_messages 
+        WHERE org_id = ? 
+          AND ((user_id = ? AND recipient_id = ?) OR (user_id = ? AND recipient_id = ?))
+        ORDER BY created_at DESC LIMIT ?
+      `).all(orgId, userId, recipientId, recipientId, userId, limit).reverse().map(mapChat);
+    }
+  },
+  saveChatMessage: (orgId, userId, userName, message, recipientId = null) => {
+    const id = 'chat_' + Date.now() + Math.floor(Math.random() * 1000);
+    const createdAt = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO chat_messages (id, org_id, user_id, user_name, message, recipient_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(id, orgId, userId, userName, message, recipientId || null, createdAt);
+    return { id, orgId, userId, userName, message, recipientId, createdAt };
+  },
+  logUserLogin: (orgId, userId, userName, email) => {
+    const id = 'log_' + Date.now() + Math.floor(Math.random() * 1000);
+    const createdAt = new Date().toISOString();
+    const loginDate = createdAt.split('T')[0]; // YYYY-MM-DD
+    db.prepare(`
+      INSERT INTO login_logs (id, org_id, user_id, user_name, user_email, login_date, action, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, orgId, userId, userName, email, loginDate, 'LOGIN', createdAt);
+    return { id, orgId, userId, userName, email, loginDate, action: 'LOGIN', createdAt };
+  },
+  logUserLogout: (orgId, userId, userName, email, actionType = 'LOGOUT') => {
+    const id = 'log_' + Date.now() + Math.floor(Math.random() * 1000);
+    const createdAt = new Date().toISOString();
+    const loginDate = createdAt.split('T')[0]; // YYYY-MM-DD
+    db.prepare(`
+      INSERT INTO login_logs (id, org_id, user_id, user_name, user_email, login_date, action, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, orgId, userId, userName, email, loginDate, actionType, createdAt);
+    return { id, orgId, userId, userName, email, loginDate, action: actionType, createdAt };
+  },
+  getDailyLoginLogsForOwner: (limit = 100) => {
+    return db.prepare('SELECT * FROM login_logs ORDER BY created_at DESC LIMIT ?').all(limit).map(l => ({
+      id: l.id,
+      orgId: l.org_id,
+      userId: l.user_id,
+      userName: l.user_name,
+      userEmail: l.user_email,
+      loginDate: l.login_date,
+      action: l.action || 'LOGIN',
+      createdAt: l.created_at
+    }));
+  },
+  getPlatformUsageMetrics: () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get all organizations
+    const orgs = db.prepare('SELECT id, name FROM organizations WHERE status = ?').all('active');
+    
+    // Map usage % for each active organization
+    return orgs.map(org => {
+      const totalUsers = db.prepare("SELECT COUNT(*) as count FROM users WHERE org_id = ? AND status = 'active' AND role != 'owner'").get(org.id).count;
+      const activeToday = db.prepare("SELECT COUNT(DISTINCT user_id) as count FROM login_logs WHERE org_id = ? AND login_date = ?").get(org.id, today).count;
+      
+      const usagePercent = totalUsers > 0 ? Math.round((activeToday / totalUsers) * 100) : 0;
+      return {
+        orgId: org.id,
+        orgName: org.name,
+        totalUsers,
+        activeToday,
+        usagePercent
+      };
+    });
   }
 };
 
@@ -1167,5 +1290,18 @@ function mapSupplier(s) {
     category: s.category, gstNumber: s.gst_number,
     paymentTerms: s.payment_terms, leadTime: s.lead_time,
     status: s.status, createdAt: s.created_at
+  };
+}
+
+function mapChat(c) {
+  if (!c) return null;
+  return {
+    id: c.id,
+    orgId: c.org_id,
+    userId: c.user_id,
+    userName: c.user_name,
+    message: c.message,
+    recipientId: c.recipient_id || null,
+    createdAt: c.created_at
   };
 }

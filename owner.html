@@ -439,6 +439,14 @@
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Organizations
       </a>
+      <a class="nav-link" data-page="page-audits">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Login Audits
+      </a>
+      <a class="nav-link" data-page="page-chat-monitor">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Chat Monitor
+      </a>
       <a class="nav-link" data-page="page-plans">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         Plans & Pricing
@@ -539,6 +547,89 @@
       </div>
     </div>
 
+    <!-- LOGIN AUDITS -->
+    <div class="page" id="page-audits">
+      <div class="page-title">Login Audits & Usage %</div>
+      <div class="page-subtitle">Track daily active user (DAU) percentage and login history</div>
+      
+      <!-- Organization Usage Percentage Grid -->
+      <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:28px; box-shadow:var(--shadow);">
+        <h3 style="font-size:0.95rem; font-weight:600; margin-bottom:16px;">Daily Active Users (DAU) Percentage</h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px;" id="usage-percent-grid">
+          <div class="loading-state" style="grid-column:1/-1;"><span class="spinner"></span> Loading analysis...</div>
+        </div>
+      </div>
+
+      <!-- Login & Activity Logs Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent User Activity Logs</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Email</th>
+              <th>Org ID</th>
+              <th>Action Type</th>
+              <th>Login Date</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="logs-tbody">
+            <tr><td colspan="6" class="loading-state"><span class="spinner"></span> Loading activity logs...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CHAT MONITOR -->
+    <div class="page" id="page-chat-monitor">
+      <div class="page-title">Security Chat Monitor</div>
+      <div class="page-subtitle">Select any tenant organization to inspect their internal chat room messages</div>
+      
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px; display:flex; align-items:center; gap:16px; box-shadow:var(--shadow); flex-wrap:wrap;">
+          <div>
+            <label style="font-weight:600; font-size:0.9rem; display:block; margin-bottom:4px;">Organization:</label>
+            <select id="monitor-org-select" style="padding:8px 12px; border:1.5px solid #e5e7eb; border-radius:8px; outline:none; min-width:200px;">
+              <option value="">-- Choose Organization --</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:0.9rem; display:block; margin-bottom:4px;">Chat Type:</label>
+            <select id="monitor-type-select" style="padding:8px 12px; border:1.5px solid #e5e7eb; border-radius:8px; outline:none; min-width:160px;">
+              <option value="group">📢 Group Chat</option>
+              <option value="private">🔒 Private 1-on-1</option>
+            </select>
+          </div>
+          <div id="monitor-users-filters" style="display:none; align-items:center; gap:12px;">
+            <div>
+              <label style="font-weight:600; font-size:0.9rem; display:block; margin-bottom:4px;">Sender:</label>
+              <select id="monitor-user-a" style="padding:8px 12px; border:1.5px solid #e5e7eb; border-radius:8px; outline:none; min-width:160px;">
+                <option value="">-- Select User A --</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-weight:600; font-size:0.9rem; display:block; margin-bottom:4px;">Recipient:</label>
+              <select id="monitor-user-b" style="padding:8px 12px; border:1.5px solid #e5e7eb; border-radius:8px; outline:none; min-width:160px;">
+                <option value="">-- Select User B --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex; flex-direction:column; height:calc(100vh - 280px); min-height:380px;">
+          <div class="card-header">
+            <h3>Conversation Logs Feed</h3>
+          </div>
+          <div id="monitor-chat-container" style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; background:#fafafa;">
+            <div style="text-align:center; color:#9ca3af; padding:32px; font-style:italic;">Please select an organization to view chat history.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- PLANS -->
     <div class="page" id="page-plans">
       <div class="page-title">Plans & Pricing</div>
@@ -626,6 +717,30 @@
     loadPendingApprovals();
     loadOrganizations();
     loadPlans();
+
+    document.getElementById('monitor-org-select')?.addEventListener('change', async (e) => {
+      const orgId = e.target.value;
+      if (orgId) {
+        await populateMonitorUsers(orgId);
+        triggerMonitorChatReload();
+      } else {
+        document.getElementById('monitor-chat-container').innerHTML = '<div style="text-align:center; color:#9ca3af; padding:32px; font-style:italic;">Please select an organization to view chat history.</div>';
+      }
+    });
+
+    document.getElementById('monitor-type-select')?.addEventListener('change', (e) => {
+      const type = e.target.value;
+      const filters = document.getElementById('monitor-users-filters');
+      if (type === 'private') {
+        filters.style.display = 'flex';
+      } else {
+        filters.style.display = 'none';
+      }
+      triggerMonitorChatReload();
+    });
+
+    document.getElementById('monitor-user-a')?.addEventListener('change', triggerMonitorChatReload);
+    document.getElementById('monitor-user-b')?.addEventListener('change', triggerMonitorChatReload);
   }
 
   document.getElementById('btn-logout').addEventListener('click', () => {
@@ -647,6 +762,10 @@
         loadPendingApprovals();
       } else if (targetPage === 'page-orgs') {
         loadOrganizations();
+      } else if (targetPage === 'page-audits') {
+        loadLoginAudits();
+      } else if (targetPage === 'page-chat-monitor') {
+        populateMonitorOrgDropdown();
       }
     });
   });
@@ -787,6 +906,129 @@
       loadOrganizations();
       loadDashboard();
     } catch(e) { alert(e.message); }
+  }
+
+  async function loadLoginAudits() {
+    const usageGrid = document.getElementById('usage-percent-grid');
+    const logsTbody = document.getElementById('logs-tbody');
+
+    try {
+      // 1. Fetch usage metrics percentage
+      const usage = await api('/api/owner/usage-metrics');
+      usageGrid.innerHTML = usage.map(u => `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; text-align:center;">
+          <div style="font-size:0.75rem; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:6px;">${esc(u.orgName)}</div>
+          <div style="font-size:1.8rem; font-weight:800; color:#0284c7; margin-bottom:4px;">${u.usagePercent}%</div>
+          <div style="font-size:0.7rem; color:#94a3b8;">${u.activeToday} of ${u.totalUsers} active users today</div>
+        </div>
+      `).join('');
+
+      // 2. Fetch login logs
+      const logs = await api('/api/owner/login-logs');
+      if (!logs.length) {
+        logsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;">No login activity logs recorded yet.</td></tr>';
+        return;
+      }
+      logsTbody.innerHTML = logs.map(l => {
+        let pillClass = 'pill-blue';
+        if (l.action === 'LOGIN') pillClass = 'pill-green';
+        else if (l.action === 'LOGOUT') pillClass = 'pill-yellow';
+        else if (l.action === 'DISCONNECT') pillClass = 'pill-red';
+
+        return `
+          <tr>
+            <td><strong>${esc(l.userName)}</strong></td>
+            <td>${esc(l.userEmail)}</td>
+            <td><span class="pill pill-blue">${esc(l.orgId)}</span></td>
+            <td><span class="pill ${pillClass}" style="font-weight:700;">${esc(l.action)}</span></td>
+            <td>${esc(l.loginDate)}</td>
+            <td>${new Date(l.createdAt).toLocaleTimeString()}</td>
+          </tr>
+        `;
+      }).join('');
+    } catch(e) {
+      usageGrid.innerHTML = `<div style="color:red; grid-column:1/-1;">Error loading analytics: ${e.message}</div>`;
+      logsTbody.innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">${e.message}</td></tr>`;
+    }
+  }
+
+  async function populateMonitorOrgDropdown() {
+    const select = document.getElementById('monitor-org-select');
+    if (!select) return;
+
+    try {
+      const orgs = await api('/api/owner/organizations');
+      const activeOrgs = orgs.filter(o => o.status === 'active');
+      select.innerHTML = '<option value="">-- Choose Organization --</option>' +
+        activeOrgs.map(o => `<option value="${o.id}">${esc(o.name)} (${o.id})</option>`).join('');
+    } catch(e) {
+      console.error('Error loading monitor orgs:', e);
+    }
+  }
+
+  async function populateMonitorUsers(orgId) {
+    const userA = document.getElementById('monitor-user-a');
+    const userB = document.getElementById('monitor-user-b');
+    if (!userA || !userB) return;
+
+    try {
+      const users = await api(`/api/owner/users/${orgId}`);
+      const listOpts = users.map(u => `<option value="${u.id}">${esc(u.name)} (${esc(u.role)})</option>`).join('');
+      userA.innerHTML = '<option value="">-- Choose Sender --</option>' + listOpts;
+      userB.innerHTML = '<option value="">-- Choose Recipient --</option>' + listOpts;
+    } catch(e) {
+      console.error('Error fetching users for monitor org:', e);
+    }
+  }
+
+  function triggerMonitorChatReload() {
+    const orgId = document.getElementById('monitor-org-select').value;
+    if (orgId) {
+      loadMonitorChatHistory(orgId);
+    }
+  }
+
+  async function loadMonitorChatHistory(orgId) {
+    const container = document.getElementById('monitor-chat-container');
+    if (!container) return;
+
+    const chatType = document.getElementById('monitor-type-select').value;
+    const userA = document.getElementById('monitor-user-a').value;
+    const userB = document.getElementById('monitor-user-b').value;
+
+    if (chatType === 'private' && (!userA || !userB)) {
+      container.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:32px; font-style:italic;">Please select both a Sender and a Recipient to inspect private chats.</div>';
+      return;
+    }
+
+    container.innerHTML = '<div class="loading-state" style="text-align:center; padding:32px;"><span class="spinner"></span> Loading conversation logs...</div>';
+
+    try {
+      const url = chatType === 'private' 
+        ? `/api/owner/chats/${orgId}?userId=${userA}&recipientId=${userB}`
+        : `/api/owner/chats/${orgId}`;
+      const messages = await api(url);
+      if (!messages.length) {
+        container.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:32px; font-style:italic;">No messages found.</div>';
+        return;
+      }
+
+      container.innerHTML = messages.map(msg => {
+        const timeStr = new Date(msg.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+        return `
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-bottom:8px; max-width:85%; align-self:flex-start; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:4px; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">
+              <span style="font-size:0.75rem; font-weight:700; color:#0369a1;">${esc(msg.userName)} <span style="font-weight:400; color:#64748b;">(ID: ${msg.userId})</span></span>
+              <span style="font-size:0.65rem; color:#94a3b8;">${timeStr}</span>
+            </div>
+            <div style="font-size:0.85rem; color:#1e293b; line-height:1.4; white-space:pre-wrap; word-break:break-word;">${esc(msg.message)}</div>
+          </div>
+        `;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    } catch(e) {
+      container.innerHTML = `<div style="color:red; padding:16px;">Failed to load chat history: ${e.message}</div>`;
+    }
   }
 
   function esc(str) {
