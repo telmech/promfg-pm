@@ -1587,6 +1587,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .modal-header h2 {
   font-size: 1.3rem;
+  color: var(--text-primary);
 }
 
 .btn-close-modal {
@@ -2255,8 +2256,9 @@ h1, h2, h3, h4, h5, h6 {
   min-width: 1100px;
 }
 .rfq-table thead th {
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
   padding: 12px 14px;
   text-align: left;
   font-weight: 600;
