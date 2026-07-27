@@ -51,13 +51,25 @@ try {
   console.error("Migration error:", err.message);
 }
 
-// Migration: Add process_stages_json to bom_items if missing
+// Migration: Add process_stages_json and supplier discounts to bom_items if missing
 try {
   const bomInfo = db.prepare("PRAGMA table_info(bom_items)").all();
   const bomCols = bomInfo.map(c => c.name);
   if (!bomCols.includes('process_stages_json')) {
     db.prepare("ALTER TABLE bom_items ADD COLUMN process_stages_json TEXT DEFAULT '{}'").run();
     console.log('Migration: Added process_stages_json to bom_items');
+  }
+  if (!bomCols.includes('supplier_a_discount')) {
+    db.prepare("ALTER TABLE bom_items ADD COLUMN supplier_a_discount REAL DEFAULT 0").run();
+    console.log('Migration: Added supplier_a_discount to bom_items');
+  }
+  if (!bomCols.includes('supplier_b_discount')) {
+    db.prepare("ALTER TABLE bom_items ADD COLUMN supplier_b_discount REAL DEFAULT 0").run();
+    console.log('Migration: Added supplier_b_discount to bom_items');
+  }
+  if (!bomCols.includes('supplier_c_discount')) {
+    db.prepare("ALTER TABLE bom_items ADD COLUMN supplier_c_discount REAL DEFAULT 0").run();
+    console.log('Migration: Added supplier_c_discount to bom_items');
   }
 } catch (err) {
   console.error('BOM migration error:', err.message);
@@ -380,6 +392,9 @@ function mapBOM(b) {
     supplierC_leadTime: b.supplier_c_lead_time,
     supplierC_payment: b.supplier_c_payment,
     winner: b.winner,
+    supplierA_discount: b.supplier_a_discount || 0,
+    supplierB_discount: b.supplier_b_discount || 0,
+    supplierC_discount: b.supplier_c_discount || 0,
     createdAt: b.created_at,
     processStages: JSON.parse(b.process_stages_json || '{}')
   };
@@ -981,20 +996,20 @@ module.exports = {
     db.prepare(`
       INSERT INTO bom_items (
         id, org_id, project_id, item_code, category, description, quantity, unit, target_date, status, 
-        supplier_a_name, supplier_a_price, supplier_a_lead_time, supplier_a_payment,
-        supplier_b_name, supplier_b_price, supplier_b_lead_time, supplier_b_payment,
-        supplier_c_name, supplier_c_price, supplier_c_lead_time, supplier_c_payment,
+        supplier_a_name, supplier_a_price, supplier_a_lead_time, supplier_a_payment, supplier_a_discount,
+        supplier_b_name, supplier_b_price, supplier_b_lead_time, supplier_b_payment, supplier_b_discount,
+        supplier_c_name, supplier_c_price, supplier_c_lead_time, supplier_c_payment, supplier_c_discount,
         winner, created_at, process_stages_json
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id, orgId, bomData.projectId,
       bomData.itemCode || '', bomData.category || '',
       bomData.description || '', bomData.quantity || 1, bomData.unit || 'Nos',
       bomData.targetDate || '', bomData.status || 'Draft',
-      bomData.supplierA_name || '', bomData.supplierA_price || 0, bomData.supplierA_leadTime || '', bomData.supplierA_payment || '',
-      bomData.supplierB_name || '', bomData.supplierB_price || 0, bomData.supplierB_leadTime || '', bomData.supplierB_payment || '',
-      bomData.supplierC_name || '', bomData.supplierC_price || 0, bomData.supplierC_leadTime || '', bomData.supplierC_payment || '',
+      bomData.supplierA_name || '', bomData.supplierA_price || 0, bomData.supplierA_leadTime || '', bomData.supplierA_payment || '', bomData.supplierA_discount || 0,
+      bomData.supplierB_name || '', bomData.supplierB_price || 0, bomData.supplierB_leadTime || '', bomData.supplierB_payment || '', bomData.supplierB_discount || 0,
+      bomData.supplierC_name || '', bomData.supplierC_price || 0, bomData.supplierC_leadTime || '', bomData.supplierC_payment || '', bomData.supplierC_discount || 0,
       bomData.winner || '', new Date().toISOString(), defaultStages
     );
     return mapBOM(db.prepare('SELECT * FROM bom_items WHERE id = ?').get(id));
@@ -1026,16 +1041,19 @@ module.exports = {
     if (updates.supplierA_price !== undefined) { fields.push('supplier_a_price = ?'); values.push(updates.supplierA_price); }
     if (updates.supplierA_leadTime !== undefined) { fields.push('supplier_a_lead_time = ?'); values.push(updates.supplierA_leadTime); }
     if (updates.supplierA_payment !== undefined) { fields.push('supplier_a_payment = ?'); values.push(updates.supplierA_payment); }
+    if (updates.supplierA_discount !== undefined) { fields.push('supplier_a_discount = ?'); values.push(updates.supplierA_discount); }
     
     if (updates.supplierB_name !== undefined) { fields.push('supplier_b_name = ?'); values.push(updates.supplierB_name); }
     if (updates.supplierB_price !== undefined) { fields.push('supplier_b_price = ?'); values.push(updates.supplierB_price); }
     if (updates.supplierB_leadTime !== undefined) { fields.push('supplier_b_lead_time = ?'); values.push(updates.supplierB_leadTime); }
     if (updates.supplierB_payment !== undefined) { fields.push('supplier_b_payment = ?'); values.push(updates.supplierB_payment); }
+    if (updates.supplierB_discount !== undefined) { fields.push('supplier_b_discount = ?'); values.push(updates.supplierB_discount); }
     
     if (updates.supplierC_name !== undefined) { fields.push('supplier_c_name = ?'); values.push(updates.supplierC_name); }
     if (updates.supplierC_price !== undefined) { fields.push('supplier_c_price = ?'); values.push(updates.supplierC_price); }
     if (updates.supplierC_leadTime !== undefined) { fields.push('supplier_c_lead_time = ?'); values.push(updates.supplierC_leadTime); }
     if (updates.supplierC_payment !== undefined) { fields.push('supplier_c_payment = ?'); values.push(updates.supplierC_payment); }
+    if (updates.supplierC_discount !== undefined) { fields.push('supplier_c_discount = ?'); values.push(updates.supplierC_discount); }
     
     if (updates.winner !== undefined) { fields.push('winner = ?'); values.push(updates.winner); }
 
@@ -1055,11 +1073,11 @@ module.exports = {
     const insertStmt = db.prepare(`
       INSERT INTO bom_items (
         id, org_id, project_id, item_code, category, description, quantity, unit, target_date, status,
-        supplier_a_name, supplier_a_price, supplier_a_lead_time, supplier_a_payment,
-        supplier_b_name, supplier_b_price, supplier_b_lead_time, supplier_b_payment,
-        supplier_c_name, supplier_c_price, supplier_c_lead_time, supplier_c_payment,
+        supplier_a_name, supplier_a_price, supplier_a_lead_time, supplier_a_payment, supplier_a_discount,
+        supplier_b_name, supplier_b_price, supplier_b_lead_time, supplier_b_payment, supplier_b_discount,
+        supplier_c_name, supplier_c_price, supplier_c_lead_time, supplier_c_payment, supplier_c_discount,
         winner, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const inserted = [];
@@ -1082,14 +1100,17 @@ module.exports = {
           item.supplierA_price || 0,
           item.supplierA_leadTime || '',
           item.supplierA_payment || '',
+          item.supplierA_discount || 0,
           item.supplierB_name || '',
           item.supplierB_price || 0,
           item.supplierB_leadTime || '',
           item.supplierB_payment || '',
+          item.supplierB_discount || 0,
           item.supplierC_name || '',
           item.supplierC_price || 0,
           item.supplierC_leadTime || '',
           item.supplierC_payment || '',
+          item.supplierC_discount || 0,
           item.winner || '',
           createdAt
         );

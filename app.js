@@ -39,10 +39,21 @@ const DEFAULT_TIMELINE_STAGES = [
 
 // Helper helpers for BOM Supplier Comparison
 function getWinningPrice(item) {
-  if (item.winner === 'Supplier A') return parseFloat(item.supplierA_price) || 0;
-  if (item.winner === 'Supplier B') return parseFloat(item.supplierB_price) || 0;
-  if (item.winner === 'Supplier C') return parseFloat(item.supplierC_price) || 0;
-  return 0;
+  let basePrice = 0;
+  let discount = 0;
+  if (item.winner === 'Supplier A') {
+    basePrice = parseFloat(item.supplierA_price) || 0;
+    discount = parseFloat(item.supplierA_discount) || 0;
+  } else if (item.winner === 'Supplier B') {
+    basePrice = parseFloat(item.supplierB_price) || 0;
+    discount = parseFloat(item.supplierB_discount) || 0;
+  } else if (item.winner === 'Supplier C') {
+    basePrice = parseFloat(item.supplierC_price) || 0;
+    discount = parseFloat(item.supplierC_discount) || 0;
+  } else {
+    return 0;
+  }
+  return basePrice * (1 - discount / 100);
 }
 
 function getWinnerName(item) {
@@ -192,6 +203,7 @@ async function fetchViewData(viewId) {
       renderPRDashboard();
       renderPRTable();
     } else if (viewId === 'chat') {
+      document.getElementById('chat-container-el')?.classList.remove('pane-active');
       await Promise.all([fetchUsers(), fetchChatHistory()]);
       renderChatTeammates();
     }
@@ -369,7 +381,7 @@ function showApp() {
   // Hide/Show BOM based on permissions & plan
   const plan = state.currentUser.plan || 'Free Trial';
   const planAllowsBOM = (plan === 'Growth' || plan === 'Business' || plan === 'Enterprise' || plan === 'Pro Plan' || plan === 'Free Trial');
-  const hasBOM = planAllowsBOM && (isAdmin || (state.currentUser.permissions && state.currentUser.permissions.bom === true));
+  const hasBOM = planAllowsBOM && (isAdmin || state.currentUser.department === 'Purchasing' || (state.currentUser.permissions && state.currentUser.permissions.bom === true));
   if (hasBOM) {
     document.querySelectorAll('.purchasing-admin-only').forEach(el => el.classList.remove('hidden'));
   } else {
@@ -3167,6 +3179,15 @@ function setupEventListeners() {
       alert('Please select a project first.');
       return;
     }
+    
+    // Populate active project name and number subtitle
+    const proj = state.projects.find(p => p.id === projectId);
+    const projName = proj ? proj.name : 'Unknown';
+    const projNum = proj ? (proj.projectNumber || '—') : '—';
+    document.getElementById('bom-modal-project-info').innerHTML = `
+      Project: <strong style="color:var(--primary-color);">${escapeHTML(projName)}</strong> ${projNum ? `(No: <strong style="color:var(--primary-color);">${escapeHTML(projNum)}</strong>)` : ''}
+    `;
+
     populateBOMSupplierDropdowns();
     document.getElementById('bom-form').reset();
     document.getElementById('bom-id-field').value = '';
@@ -3215,27 +3236,58 @@ function setupEventListeners() {
     const file = e.target.files[0];
     if (!file) return;
 
+    const fileName = file.name.toLowerCase();
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+
     const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const csvText = evt.target.result;
-      const parsedItems = parseCSVForBOM(csvText);
-      if (parsedItems.length === 0) {
-        alert('No valid items found in CSV.');
-        return;
-      }
-      try {
-        await apiCall('/api/projects/' + projectId + '/bom/import', 'POST', { items: parsedItems });
-        alert('Successfully imported BOM items.');
-        await fetchBOMItems(projectId);
-        renderBOMDashboard();
-        renderBOMTable();
-      } catch (err) {
-        console.error('Error importing BOM items:', err);
-        alert('Failed to import BOM CSV.');
-      }
-      e.target.value = '';
-    };
-    reader.readAsText(file);
+    if (isExcel) {
+      reader.onload = async (evt) => {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const csvText = XLSX.utils.sheet_to_csv(worksheet);
+
+          const parsedItems = parseCSVForBOM(csvText);
+          if (parsedItems.length === 0) {
+            alert('No valid items found in Excel sheet.');
+            return;
+          }
+          await apiCall('/api/projects/' + projectId + '/bom/import', 'POST', { items: parsedItems });
+          alert('Successfully imported BOM items from Excel.');
+          await fetchBOMItems(projectId);
+          renderBOMDashboard();
+          renderBOMTable();
+        } catch (err) {
+          console.error('Error importing Excel:', err);
+          alert('Failed to parse Excel file. Make sure format is correct.');
+        }
+        e.target.value = '';
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.onload = async (evt) => {
+        try {
+          const csvText = evt.target.result;
+          const parsedItems = parseCSVForBOM(csvText);
+          if (parsedItems.length === 0) {
+            alert('No valid items found in CSV.');
+            return;
+          }
+          await apiCall('/api/projects/' + projectId + '/bom/import', 'POST', { items: parsedItems });
+          alert('Successfully imported BOM items.');
+          await fetchBOMItems(projectId);
+          renderBOMDashboard();
+          renderBOMTable();
+        } catch (err) {
+          console.error('Error importing BOM items:', err);
+          alert('Failed to import BOM CSV.');
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    }
   });
 
   // Init Supplier Directory Bindings
@@ -3532,10 +3584,14 @@ function initSocket() {
     if (state.currentView === 'chat' && isCurrentActiveChat) {
       appendSingleChatMessage(msgObj);
       scrollChatToBottom();
+      if (msgObj.userId !== state.currentUser?.id) {
+        playNotificationSound();
+      }
     } else {
       // Show notification toast if the message is from another teammate
       if (msgObj.userId !== state.currentUser?.id) {
         showToast(`💬 New ${isGroupMsg ? 'Group' : 'Private'} message from ${msgObj.userName}: "${msgObj.message.substring(0, 25)}..."`, 'success');
+        playNotificationSound();
         
         // Highlight the unread source inside teammates list if currently viewing chat tab
         if (state.currentView === 'chat') {
@@ -4893,24 +4949,41 @@ function renderBOMTable() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-secondary);">No BOM items found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-secondary);">No BOM items found.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = filtered.map(item => {
+  tbody.innerHTML = filtered.map((item, idx) => {
     const isOverdue = item.status !== 'Received' && item.status !== 'Issued' && item.targetDate && item.targetDate < new Date().toISOString().split('T')[0];
     
     // Status Dropdown options
     const statuses = ['Draft', 'Awaiting Approval', 'Approved', 'Enquiry Sent', 'PO Placed', 'Received', 'Issued'];
     const selectOptions = statuses.map(s => '<option value="' + s + '"' + (s === item.status ? ' selected' : '') + '>' + s + '</option>').join('');
 
-    // Format Awarded Winner
+    // Format Awarded Winner with Discount and Decimals support
     const hasWinner = item.winner && item.winner !== 'None';
-    const winnerHtml = hasWinner
-      ? '<strong>' + escapeHTML(getWinnerName(item)) + '</strong><br>' +
-        '₹' + (getWinnerPrice(item) * (parseFloat(item.quantity)||1)).toLocaleString() + '<br>' +
-        '<small style="color:var(--text-secondary);">Del: ' + escapeHTML(getWinnerDelivery(item)) + '</small>'
-      : '<span style="color:#ef4444; font-weight:bold; font-size:0.75rem;">Under Review</span>';
+    let winnerHtml = '';
+    if (hasWinner) {
+      const winnerName = getWinnerName(item);
+      const base = item.winner === 'Supplier A' ? item.supplierA_price : (item.winner === 'Supplier B' ? item.supplierB_price : item.supplierC_price);
+      const disc = item.winner === 'Supplier A' ? item.supplierA_discount : (item.winner === 'Supplier B' ? item.supplierB_discount : item.supplierC_discount);
+      const finalPrice = getWinnerPrice(item);
+      const totalCost = finalPrice * (parseFloat(item.quantity) || 1);
+      
+      winnerHtml = `<strong>${escapeHTML(winnerName)}</strong><br>`;
+      if (disc > 0) {
+        winnerHtml += `<span style="text-decoration:line-through; color:var(--text-secondary); font-size:0.72rem;">₹${parseFloat(base).toFixed(2)}</span> ` +
+                      `<span style="color:#10b981; font-weight:700; font-size:0.72rem;">-${disc}%</span><br>` +
+                      `<strong>₹${finalPrice.toFixed(2)}</strong><br>` +
+                      `<span style="font-size:0.72rem; color:var(--text-secondary); font-weight:600;">(Total: ₹${totalCost.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})})</span>`;
+      } else {
+        winnerHtml += `<strong>₹${finalPrice.toFixed(2)}</strong><br>` +
+                      `<span style="font-size:0.72rem; color:var(--text-secondary); font-weight:600;">(Total: ₹${totalCost.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})})</span>`;
+      }
+      winnerHtml += `<br><small style="color:var(--text-secondary);">Del: ${escapeHTML(getWinnerDelivery(item))}</small>`;
+    } else {
+      winnerHtml = '<span style="color:#ef4444; font-weight:bold; font-size:0.75rem;">Under Review</span>';
+    }
 
     // Manufacturing process progress
     const ps = item.processStages || {};
@@ -4922,7 +4995,6 @@ function renderBOMTable() {
       return s.status && s.status !== 'Pending';
     }).length;
     const pct = Math.round((doneCount / 5) * 100);
-    const mfgAssigned = ps.manufacturing?.assignedTo || 'Fab';
     const progColor = pct === 100 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#6366f1';
     const progressHtml = '<div style="display:flex;align-items:center;gap:6px;">' +
       '<div style="flex:1;height:5px;background:#e2e8f0;border-radius:4px;min-width:48px;">' +
@@ -4932,6 +5004,7 @@ function renderBOMTable() {
     '</div>';
 
     return '<tr class="' + (isOverdue ? 'bom-overdue' : '') + '">' +
+      '<td style="color:var(--text-secondary); font-weight:600; text-align:center;">' + (idx + 1) + '</td>' +
       '<td><strong>' + escapeHTML(item.itemCode || '—') + '</strong></td>' +
       '<td>' + escapeHTML(item.description || '—') + '</td>' +
       '<td><span class="rfq-status-badge rfq-s-new">' + escapeHTML(item.category || 'Raw Material') + '</span></td>' +
@@ -5098,16 +5171,19 @@ async function handleBOMSubmit(e) {
     // Supplier Quotes
     supplierA_name: document.getElementById('bom-supA-name').value,
     supplierA_price: parseFloat(document.getElementById('bom-supA-price').value) || 0,
+    supplierA_discount: parseFloat(document.getElementById('bom-supA-discount').value) || 0,
     supplierA_leadTime: document.getElementById('bom-supA-delivery').value.trim(),
     supplierA_payment: document.getElementById('bom-supA-payment').value.trim(),
     
     supplierB_name: document.getElementById('bom-supB-name').value,
     supplierB_price: parseFloat(document.getElementById('bom-supB-price').value) || 0,
+    supplierB_discount: parseFloat(document.getElementById('bom-supB-discount').value) || 0,
     supplierB_leadTime: document.getElementById('bom-supB-delivery').value.trim(),
     supplierB_payment: document.getElementById('bom-supB-payment').value.trim(),
     
     supplierC_name: document.getElementById('bom-supC-name').value,
     supplierC_price: parseFloat(document.getElementById('bom-supC-price').value) || 0,
+    supplierC_discount: parseFloat(document.getElementById('bom-supC-discount').value) || 0,
     supplierC_leadTime: document.getElementById('bom-supC-delivery').value.trim(),
     supplierC_payment: document.getElementById('bom-supC-payment').value.trim(),
     
@@ -5172,6 +5248,14 @@ function handleBOMEdit(bomId) {
   const item = state.bomItems.find(i => i.id === bomId);
   if (!item) return;
 
+  const projectId = document.getElementById('bom-project-select').value;
+  const proj = state.projects.find(p => p.id === projectId);
+  const projName = proj ? proj.name : 'Unknown';
+  const projNum = proj ? (proj.projectNumber || '—') : '—';
+  document.getElementById('bom-modal-project-info').innerHTML = `
+    Project: <strong style="color:var(--primary-color);">${escapeHTML(projName)}</strong> ${projNum ? `(No: <strong style="color:var(--primary-color);">${escapeHTML(projNum)}</strong>)` : ''}
+  `;
+
   document.getElementById('bom-id-field').value = item.id;
   document.getElementById('bom-item-code').value = item.itemCode || '';
   document.getElementById('bom-category').value = item.category || 'Raw Material';
@@ -5187,18 +5271,21 @@ function handleBOMEdit(bomId) {
   // Supplier A
   document.getElementById('bom-supA-name').value = item.supplierA_name || '';
   document.getElementById('bom-supA-price').value = item.supplierA_price || '';
+  document.getElementById('bom-supA-discount').value = item.supplierA_discount || '';
   document.getElementById('bom-supA-delivery').value = item.supplierA_leadTime || '';
   document.getElementById('bom-supA-payment').value = item.supplierA_payment || '';
 
   // Supplier B
   document.getElementById('bom-supB-name').value = item.supplierB_name || '';
   document.getElementById('bom-supB-price').value = item.supplierB_price || '';
+  document.getElementById('bom-supB-discount').value = item.supplierB_discount || '';
   document.getElementById('bom-supB-delivery').value = item.supplierB_leadTime || '';
   document.getElementById('bom-supB-payment').value = item.supplierB_payment || '';
 
   // Supplier C
   document.getElementById('bom-supC-name').value = item.supplierC_name || '';
   document.getElementById('bom-supC-price').value = item.supplierC_price || '';
+  document.getElementById('bom-supC-discount').value = item.supplierC_discount || '';
   document.getElementById('bom-supC-delivery').value = item.supplierC_leadTime || '';
   document.getElementById('bom-supC-payment').value = item.supplierC_payment || '';
 
@@ -5298,6 +5385,17 @@ function downloadBOMTemplate() {
   URL.revokeObjectURL(url);
 }
 
+function cleanCategory(cat) {
+  if (!cat) return 'Raw Material';
+  const c = cat.trim().toLowerCase();
+  if (c.includes('bop') || c.includes('bought') || c.includes('bought-out')) return 'Bought-Out-Part (BOP)';
+  if (c.includes('raw') || c.includes('material')) return 'Raw Material';
+  if (c.includes('elect')) return 'Electrical';
+  if (c.includes('pneum')) return 'Pneumatic';
+  if (c.includes('fast')) return 'Fasteners';
+  return 'Raw Material';
+}
+
 function parseCSVForBOM(csvText) {
   const lines = csvText.split('\n');
   if (lines.length < 2) return [];
@@ -5333,10 +5431,16 @@ function parseCSVForBOM(csvText) {
       return defaultVal;
     };
 
+    const itemCode = map('item code', map('part no', map('part number', ''))).trim();
+    const description = map('description', map('item name', map('part name', ''))).trim();
+
+    // Skip blank row artifacts from Excel
+    if (!itemCode && !description) continue;
+
     items.push({
-      itemCode: map('item code', map('part no', map('part number', ''))),
-      description: map('description', map('item name', map('part name', ''))),
-      category: map('category', 'Raw Material'),
+      itemCode,
+      description,
+      category: cleanCategory(map('category', 'Raw Material')),
       quantity: parseFloat(map('qty', map('quantity', '1'))) || 1,
       unit: map('unit', 'Nos'),
       targetDate: map('target date', map('target lead date', '')),
@@ -5345,16 +5449,19 @@ function parseCSVForBOM(csvText) {
       // Supplier Quotation Mappings
       supplierA_name: map('supplier a name', map('supplier a', '')),
       supplierA_price: parseFloat(map('supplier a price', map('price a', '0'))) || 0,
+      supplierA_discount: parseFloat(map('supplier a discount', map('discount a', '0'))) || 0,
       supplierA_leadTime: map('supplier a lead time', map('lead time a', '')),
       supplierA_payment: map('supplier a payment', map('payment a', '')),
       
       supplierB_name: map('supplier b name', map('supplier b', '')),
       supplierB_price: parseFloat(map('supplier b price', map('price b', '0'))) || 0,
+      supplierB_discount: parseFloat(map('supplier b discount', map('discount b', '0'))) || 0,
       supplierB_leadTime: map('supplier b lead time', map('lead time b', '')),
       supplierB_payment: map('supplier b payment', map('payment b', '')),
       
       supplierC_name: map('supplier c name', map('supplier c', '')),
       supplierC_price: parseFloat(map('supplier c price', map('price c', '0'))) || 0,
+      supplierC_discount: parseFloat(map('supplier c discount', map('discount c', '0'))) || 0,
       supplierC_leadTime: map('supplier c lead time', map('lead time c', '')),
       supplierC_payment: map('supplier c payment', map('payment c', '')),
       
@@ -6263,6 +6370,9 @@ async function selectChatTarget(targetId, displayName) {
   const header = document.getElementById('chat-active-header');
   if (header) header.textContent = displayName;
 
+  // Toggle mobile pane active display state
+  document.getElementById('chat-container-el')?.classList.add('pane-active');
+
   // Rerender sidebar highlights & clear badge
   renderChatTeammates();
   const targetEl = document.querySelector(`.chat-target-item[data-id="${targetId}"]`);
@@ -6286,6 +6396,12 @@ function scrollChatToBottom() {
 }
 
 function setupChatBindings() {
+  // Mobile back button listener to return to list
+  document.getElementById('chat-mobile-back')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('chat-container-el')?.classList.remove('pane-active');
+  });
+
   const form = document.getElementById('chat-send-form');
   if (!form) return;
 
@@ -6305,4 +6421,40 @@ function setupChatBindings() {
       showToast('Connection lost. Unable to send message.', 'error');
     }
   });
+}
+
+// ==================== AUDIO NOTIFICATION UTILITY ====================
+function playNotificationSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+
+    // Sound ping 1
+    playTone(ctx, 830, 0.08, 0.05);
+
+    // Sound ping 2 slightly delayed
+    setTimeout(() => {
+      playTone(ctx, 980, 0.12, 0.05);
+    }, 80);
+  } catch (e) {
+    console.warn('Audio play failed:', e);
+  }
+}
+
+function playTone(ctx, freq, duration, volume) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  
+  gain.gain.setValueAtTime(volume, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+  
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  
+  osc.start();
+  osc.stop(ctx.currentTime + duration);
 }
