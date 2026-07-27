@@ -590,7 +590,7 @@ app.get('/api/projects', authenticateToken, requireProjectAccess, (req, res) => 
 });
 
 app.post('/api/projects', authenticateToken, requireProjectAccess, requireAdminPMOrSuperAdmin, (req, res) => {
-  const { name, description, startDate, endDate, members, customerName } = req.body;
+  const { name, description, startDate, endDate, members, customerName, projectNumber } = req.body;
   if (!name) return res.status(400).json({ error: 'Project name is required.' });
 
   try {
@@ -601,7 +601,8 @@ app.post('/api/projects', authenticateToken, requireProjectAccess, requireAdminP
       endDate: endDate || '',
       members: members || [],
       customerName: customerName || '',
-      customerLogo: ''
+      customerLogo: '',
+      projectNumber: projectNumber || ''
     });
     res.status(201).json(project);
   } catch (err) {
@@ -610,7 +611,7 @@ app.post('/api/projects', authenticateToken, requireProjectAccess, requireAdminP
 });
 
 app.put('/api/projects/:id', authenticateToken, requireProjectAccess, requireAdminPMOrSuperAdmin, (req, res) => {
-  const { name, description, startDate, endDate, members, customerName } = req.body;
+  const { name, description, startDate, endDate, members, customerName, projectNumber } = req.body;
   try {
     const updates = {};
     if (name !== undefined) updates.name = name;
@@ -619,6 +620,7 @@ app.put('/api/projects/:id', authenticateToken, requireProjectAccess, requireAdm
     if (endDate !== undefined) updates.endDate = endDate;
     if (members !== undefined) updates.members = members;
     if (customerName !== undefined) updates.customerName = customerName;
+    if (projectNumber !== undefined) updates.projectNumber = projectNumber;
 
     const updated = db.updateProject(req.user.orgId, req.params.id, updates);
     res.json(updated);

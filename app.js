@@ -554,123 +554,296 @@ function applyBranding() {
 // ==================== RENDERING LOGIC ====================
 
 // 1. Dashboard View
+// 1. Dashboard View
 function renderDashboard() {
   const totalProj = state.projects.length;
-  
-  const role = state.currentUser.role;
-  const isManager = (role === 'admin' || role === 'project_manager');
-  
-  const myTasks = state.tasks.filter(t => t.assigneeId === state.currentUser.id);
-  const dashboardTasks = isManager ? state.tasks : myTasks;
+  const now = new Date();
+  const nowStr = now.toISOString().split('T')[0];
 
-  const todoTasks = dashboardTasks.filter(t => t.status === 'todo').length;
-  const inProgressTasks = dashboardTasks.filter(t => t.status === 'inprogress').length;
-  const doneTasks = dashboardTasks.filter(t => t.status === 'done').length;
-
-  document.getElementById('stat-total-projects').textContent = totalProj;
-  document.getElementById('stat-todo-tasks').textContent = todoTasks;
-  document.getElementById('stat-inprogress-tasks').textContent = inProgressTasks;
-  document.getElementById('stat-completed-tasks').textContent = doneTasks;
-
-  const nowStr = new Date().toISOString().split('T')[0];
-  const overdueTasks = myTasks.filter(t => t.status !== 'done' && t.dueDate && t.dueDate < nowStr);
-  
-  const alertBanner = document.getElementById('dashboard-alert-banner');
-  if (overdueTasks.length > 0) {
-    alertBanner.classList.remove('hidden');
-    document.getElementById('alert-banner-text').textContent = `Attention: You have ${overdueTasks.length} overdue task(s) assigned to you!`;
-  } else {
-    alertBanner.classList.add('hidden');
+  // Update Live clock/date
+  const liveTimeEl = document.getElementById('dash-live-time');
+  if (liveTimeEl) {
+    const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+    liveTimeEl.textContent = now.toLocaleDateString('en-US', options) + ' | Operations Live Feed';
   }
 
-  // Due Soon
-  const myUpcoming = myTasks
-    .filter(t => t.status !== 'done')
-    .sort((a, b) => {
+  let onTrackCount = 0;
+  let behindCount = 0;
+  let totalTaskProgressPctSum = 0;
+  let activeMilestonesCount = 0;
+
+  const projectStatusTbody = document.getElementById('dash-project-status-tbody');
+  if (projectStatusTbody) projectStatusTbody.innerHTML = '';
+
+  state.projects.forEach(proj => {
+    // 1. Task checklist progress
+    const projTasks = state.tasks.filter(t => t.projectId === proj.id);
+    const completedTasksCount = projTasks.filter(t => t.status === 'done').length;
+    const totalTasksCount = projTasks.length;
+    const taskProgressPct = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+    totalTaskProgressPctSum += taskProgressPct;
+
+    // 2. Timeline milestones calculations
+    const timeline = proj.timeline || [];
+    let projectMilestoneProgress = 0;
+    if (timeline.length > 0) {
+      const totalStageProgress = timeline.reduce((acc, stage) => acc + (parseFloat(stage.progress) || 0), 0);
+      projectMilestoneProgress = Math.round(totalStageProgress / timeline.length);
+    } else {
+      projectMilestoneProgress = taskProgressPct;
+    }
+
+    // Active milestones count (milestones in progress: > 0 and < 100)
+    const inProgressStages = timeline.filter(s => s.progress > 0 && s.progress < 100);
+    activeMilestonesCount += inProgressStages.length;
+
+    // 3. Time Plan Status & Health Rating
+    let timeStatus = 'Pending';
+    let pillClass = 'pending';
+    let projScore = 100;
+
+    if (proj.startDate && proj.endDate) {
+      const startDate = new Date(proj.startDate);
+      const endDate = new Date(proj.endDate);
+      const totalDuration = endDate - startDate;
+      const elapsed = now - startDate;
+
+      if (elapsed <= 0) {
+        timeStatus = 'Not Started';
+        pillClass = 'pending';
+        projScore = 100;
+      } else if (projectMilestoneProgress >= 100) {
+        timeStatus = 'Completed';
+        pillClass = 'on-track';
+        onTrackCount++;
+        projScore = 100;
+      } else if (now > endDate) {
+        timeStatus = 'Overdue';
+        pillClass = 'behind';
+        behindCount++;
+        projScore = Math.max(20, Math.round(projectMilestoneProgress * 0.8));
+      } else {
+        const expectedProgress = totalDuration > 0 ? (elapsed / totalDuration) * 100 : 0;
+        if (projectMilestoneProgress >= expectedProgress - 5) {
+          timeStatus = 'On Track';
+          pillClass = 'on-track';
+          onTrackCount++;
+          projScore = Math.min(100, Math.round(100 - (expectedProgress - projectMilestoneProgress) * 0.5));
+        } else {
+          timeStatus = 'Delayed';
+          pillClass = 'behind';
+          behindCount++;
+          projScore = Math.max(30, Math.round(100 - (expectedProgress - projectMilestoneProgress) * 1.5));
+        }
+      }
+    } else {
+      timeStatus = 'Pending';
+      pillClass = 'pending';
+      projScore = 80;
+    }
+
+    // Date formatting helper
+    const formatDate = (dStr) => {
+      if (!dStr) return '-';
+      const parts = dStr.split('-');
+      if (parts.length !== 3) return dStr;
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${parts[2]} ${months[parseInt(parts[1]) - 1]}`;
+    };
+
+    const schedText = proj.startDate && proj.endDate 
+      ? `<span style="font-size:0.78rem; font-weight:600; color:#cbd5e1;">${formatDate(proj.startDate)}</span> <span style="color:#64748b;">→</span> <span style="font-size:0.78rem; font-weight:600; color:#cbd5e1;">${formatDate(proj.endDate)}</span>`
+      : '<span style="color:#64748b; font-style:italic;">Not Scheduled</span>';
+
+    // 4. Render project health matrix row
+    if (projectStatusTbody) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <span class="dash-proj-name">${escapeHTML(proj.name)}</span>
+          <span class="dash-proj-num">${escapeHTML(proj.projectNumber || 'No Project ID')}</span>
+        </td>
+        <td>
+          <span class="dash-status-pill ${pillClass}">
+            ${timeStatus}
+          </span>
+        </td>
+        <td>${schedText}</td>
+        <td>
+          <div class="dash-progress-wrap">
+            <div class="dash-progress-bar">
+              <div class="dash-progress-fill amber" style="width: ${projectMilestoneProgress}%"></div>
+            </div>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #fbbf24; min-width: 32px; text-align: right;">${projectMilestoneProgress}%</span>
+          </div>
+        </td>
+        <td>
+          <div class="dash-progress-wrap">
+            <div class="dash-progress-bar">
+              <div class="dash-progress-fill indigo" style="width: ${taskProgressPct}%"></div>
+            </div>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #818cf8; min-width: 32px; text-align: right;">${taskProgressPct}%</span>
+          </div>
+        </td>
+        <td>
+          <span style="font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; color: ${projScore >= 80 ? '#34d399' : projScore >= 50 ? '#fbbf24' : '#f87171'}">
+            ${projScore} / 100
+          </span>
+        </td>
+      `;
+      projectStatusTbody.appendChild(tr);
+    }
+  });
+
+  if (totalProj === 0 && projectStatusTbody) {
+    projectStatusTbody.innerHTML = `<tr><td colspan="6" class="dash-table-empty">No active projects registered in system.</td></tr>`;
+  }
+
+  const avgTaskProgressPct = state.projects.length > 0 ? Math.round(totalTaskProgressPctSum / state.projects.length) : 0;
+
+  // Update Summary KPI values
+  document.getElementById('stat-total-projects').textContent = totalProj;
+  document.getElementById('stat-on-track').textContent = onTrackCount;
+  document.getElementById('stat-behind').textContent = behindCount;
+  document.getElementById('stat-active-milestones').textContent = activeMilestonesCount;
+  document.getElementById('stat-avg-task-progress').textContent = `${avgTaskProgressPct}%`;
+
+  const kpiAvgBar = document.getElementById('kpi-avg-bar');
+  if (kpiAvgBar) kpiAvgBar.style.width = `${avgTaskProgressPct}%`;
+
+  // Live Operations Health Pill
+  const healthTextEl = document.getElementById('dash-overall-health-text');
+  const healthPillEl = document.getElementById('dash-overall-health-pill');
+  if (healthTextEl && healthPillEl) {
+    if (behindCount > 0) {
+      healthTextEl.textContent = 'SYSTEMS BEHIND';
+      healthPillEl.style.background = 'rgba(239, 68, 68, 0.12)';
+      healthPillEl.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      healthPillEl.style.color = '#f87171';
+      const dot = healthPillEl.querySelector('.dash-health-dot');
+      if (dot) {
+        dot.style.background = '#ef4444';
+        dot.style.boxShadow = '0 0 8px #ef4444';
+      }
+    } else {
+      healthTextEl.textContent = 'SYSTEMS OPTIMAL';
+      healthPillEl.style.background = 'rgba(16, 185, 129, 0.12)';
+      healthPillEl.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+      healthPillEl.style.color = '#34d399';
+      const dot = healthPillEl.querySelector('.dash-health-dot');
+      if (dot) {
+        dot.style.background = '#10b981';
+        dot.style.boxShadow = '0 0 8px #10b981';
+      }
+    }
+  }
+
+  // Overdue alerts
+  const overdueTasks = state.tasks.filter(t => t.assigneeId === state.currentUser.id && t.status !== 'done' && t.dueDate && t.dueDate < nowStr);
+  const alertBanner = document.getElementById('dashboard-alert-banner');
+  if (alertBanner) {
+    if (overdueTasks.length > 0) {
+      alertBanner.classList.remove('hidden');
+      document.getElementById('alert-banner-text').textContent = `Attention: You have ${overdueTasks.length} overdue task(s) assigned to you!`;
+    } else {
+      alertBanner.classList.add('hidden');
+    }
+  }
+
+  // Render Ongoing & Upcoming Tasks list helper function
+  window.renderDashboardTasksWidget = function(taskType) {
+    const listContainer = document.getElementById('dash-tasks-list');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    let filteredList = [];
+    if (taskType === 'ongoing') {
+      filteredList = state.tasks.filter(t => t.status === 'inprogress');
+    } else {
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() + 14);
+      const limitStr = limitDate.toISOString().split('T')[0];
+      filteredList = state.tasks.filter(t => t.status !== 'done' && t.dueDate && t.dueDate >= nowStr && t.dueDate <= limitStr);
+    }
+
+    if (filteredList.length === 0) {
+      listContainer.innerHTML = `<div class="dash-empty">No ${taskType === 'ongoing' ? 'ongoing' : 'upcoming'} tasks found.</div>`;
+      return;
+    }
+
+    filteredList.sort((a, b) => {
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
       return a.dueDate.localeCompare(b.dueDate);
-    })
-    .slice(0, 5);
+    });
 
-  const myUpcomingList = document.getElementById('my-urgent-tasks-list');
-  myUpcomingList.innerHTML = '';
-  
-  if (myUpcoming.length === 0) {
-    myUpcomingList.innerHTML = '<div class="empty-state">No upcoming tasks assigned. Good job!</div>';
-  } else {
-    myUpcoming.forEach(task => {
+    filteredList.forEach(task => {
       const projName = state.projects.find(p => p.id === task.projectId)?.name || 'Unknown Project';
       const isOverdue = task.dueDate && task.dueDate < nowStr;
-      
+      const assigneeName = state.users.find(u => u.id === task.assigneeId)?.name || 'Unassigned';
+
       const item = document.createElement('div');
-      item.className = 'task-item-mini';
+      item.className = 'dash-task-item';
       item.innerHTML = `
-        <div>
-          <h4>${escapeHTML(task.title)}</h4>
-          <p>${escapeHTML(projName)} • Due: <span class="${isOverdue ? 'overdue' : ''}">${task.dueDate || 'No Date'}</span></p>
+        <div class="dash-task-header">
+          <h4 class="dash-task-title">${escapeHTML(task.title)}</h4>
+          <span class="priority-pill pill-${task.priority}">${task.priority}</span>
         </div>
-        <span class="priority-pill pill-${task.priority}">${task.priority}</span>
+        <div class="dash-task-meta">
+          <div>
+            <span class="dash-task-proj">${escapeHTML(projName)}</span>
+            <span style="color:#64748b; margin:0 4px;">•</span>
+            <span class="dash-task-owner">${escapeHTML(assigneeName)}</span>
+          </div>
+          <span class="dash-task-due ${isOverdue ? 'overdue' : ''}">
+            📅 ${task.dueDate || 'No Date'}
+          </span>
+        </div>
       `;
       item.addEventListener('click', () => openTaskDetailsModal(task.id));
-      myUpcomingList.appendChild(item);
+      listContainer.appendChild(item);
     });
+  };
+
+  // Render Team Workload Panel
+  const workloadContainer = document.getElementById('dash-workload-list');
+  if (workloadContainer) {
+    workloadContainer.innerHTML = '';
+    const activeUsers = state.users.filter(u => u.status === 'active');
+    
+    if (activeUsers.length === 0) {
+      workloadContainer.innerHTML = '<div class="dash-empty">No active team members.</div>';
+    } else {
+      activeUsers.forEach(user => {
+        const userTasks = state.tasks.filter(t => t.assigneeId === user.id);
+        const openCount = userTasks.filter(t => t.status !== 'done').length;
+        const doneCount = userTasks.filter(t => t.status === 'done').length;
+        const total = openCount + doneCount;
+        
+        const openPercent = total > 0 ? (openCount / total) * 100 : 0;
+        const donePercent = total > 0 ? (doneCount / total) * 100 : 0;
+
+        const item = document.createElement('div');
+        item.className = 'dash-workload-item';
+        item.innerHTML = `
+          <div class="dash-workload-meta">
+            <span>${escapeHTML(user.name)}</span>
+            <span class="dash-workload-count">${openCount} open / ${doneCount} completed</span>
+          </div>
+          <div class="dash-workload-bar">
+            <div class="dash-workload-open" style="width: ${openPercent}%" title="Open Tasks"></div>
+            <div class="dash-workload-done" style="width: ${donePercent}%" title="Completed Tasks"></div>
+          </div>
+        `;
+        workloadContainer.appendChild(item);
+      });
+    }
   }
 
-  // Workload Chart
-  const chartContainer = document.getElementById('workload-chart-container');
-  chartContainer.innerHTML = '';
-
-  let usersToDisplay = [];
-  if (isManager && state.users.length > 0) {
-    usersToDisplay = state.users.filter(u => u.status === 'active');
-  } else {
-    const assigneeIds = [...new Set(state.tasks.map(t => t.assigneeId).filter(Boolean))];
-    if (!assigneeIds.includes(state.currentUser.id)) assigneeIds.push(state.currentUser.id);
-    
-    usersToDisplay = assigneeIds.map(id => {
-      if (id === state.currentUser.id) return state.currentUser;
-      const foundUser = state.users.find(u => u.id === id);
-      return {
-        id,
-        name: foundUser ? foundUser.name : ('User ' + id),
-        status: 'active'
-      };
-    });
-  }
-
-  if (usersToDisplay.length === 0) {
-    chartContainer.innerHTML = '<div class="empty-state">No active team members.</div>';
-  } else {
-    const workloadList = document.createElement('div');
-    workloadList.className = 'workload-list';
-    
-    usersToDisplay.forEach(user => {
-      const userTasks = state.tasks.filter(t => t.assigneeId === user.id);
-      const openCount = userTasks.filter(t => t.status !== 'done').length;
-      const doneCount = userTasks.filter(t => t.status === 'done').length;
-      const total = openCount + doneCount;
-      
-      const openPercent = total > 0 ? (openCount / total) * 100 : 0;
-      const donePercent = total > 0 ? (doneCount / total) * 100 : 0;
-
-      const row = document.createElement('div');
-      row.className = 'workload-item';
-      row.innerHTML = `
-        <div class="workload-name-row">
-          <span>${escapeHTML(user.name)}</span>
-          <span>${openCount} open / ${doneCount} done</span>
-        </div>
-        <div class="workload-bar-wrapper">
-          <div class="workload-open" style="width: ${openPercent}%" title="Open tasks"></div>
-          <div class="workload-done" style="width: ${donePercent}%" title="Completed tasks"></div>
-        </div>
-      `;
-      workloadList.appendChild(row);
-    });
-    
-    chartContainer.appendChild(workloadList);
-  }
+  // Render active task tab initially
+  const activeTabBtn = document.querySelector('.dash-tab-group .active');
+  const initialTab = activeTabBtn && activeTabBtn.id === 'btn-tab-upcoming' ? 'upcoming' : 'ongoing';
+  renderDashboardTasksWidget(initialTab);
 
   renderNotifications();
 }
@@ -692,8 +865,8 @@ function renderProjects() {
   }
 
   const role = state.currentUser.role;
-  const isManager = (role === 'admin' || role === 'project_manager');
-  const hasDeletionRights = (role === 'admin');
+  const isManager = (role === 'admin' || role === 'project_manager' || role === 'owner');
+  const hasDeletionRights = (role === 'admin' || role === 'owner');
 
   filtered.forEach(proj => {
     const projTasks = state.tasks.filter(t => t.projectId === proj.id);
@@ -715,6 +888,15 @@ function renderProjects() {
       `;
     }
 
+    const timeline = proj.timeline || [];
+    let projectProgress = 0;
+    if (timeline.length > 0) {
+      const totalStageProgress = timeline.reduce((acc, stage) => acc + (parseFloat(stage.progress) || 0), 0);
+      projectProgress = Math.round(totalStageProgress / timeline.length);
+    } else {
+      projectProgress = percent;
+    }
+
     const card = document.createElement('div');
     card.className = 'project-card';
     const numBadge = proj.projectNumber ? `<span style="background:var(--primary-color); color:#fff; font-size:0.7rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-left:8px; vertical-align:middle;">#${escapeHTML(proj.projectNumber)}</span>` : '';
@@ -724,18 +906,21 @@ function renderProjects() {
       
       ${customerHtml}
 
-      <div class="project-dates" style="margin-top: 12px;">
+      <div class="project-dates" style="margin-top: 12px; margin-bottom: 12px;">
         Dates: ${proj.startDate || 'N/A'} to ${proj.endDate || 'N/A'}
       </div>
+
+      <!-- Project Progress -->
       <div class="project-progress-row">
         <div class="project-progress-bar">
           <div class="project-progress-fill" style="width: ${percent}%"></div>
         </div>
         <div class="project-progress-label">
-          <span>Progress</span>
+          <span>Project Progress</span>
           <span>${percent}% (${completed}/${total} tasks)</span>
         </div>
       </div>
+
       <div class="project-card-actions admin-pm-only">
         <button class="btn-icon btn-edit-proj" title="Edit Project" data-id="${proj.id}">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -813,6 +998,22 @@ function renderKanbanBoard() {
   if (priorityFilter !== 'all') {
     filteredTasks = filteredTasks.filter(t => t.priority === priorityFilter);
   }
+
+  // Update Task Board Metrics Bar
+  const totalCount = filteredTasks.length;
+  const todoCount = filteredTasks.filter(t => t.status === 'todo').length;
+  const inProgressCount = filteredTasks.filter(t => t.status === 'inprogress').length;
+  const doneCount = filteredTasks.filter(t => t.status === 'done').length;
+
+  const totalEl = document.getElementById('board-stat-total');
+  const todoEl = document.getElementById('board-stat-todo');
+  const inProgressEl = document.getElementById('board-stat-inprogress');
+  const doneEl = document.getElementById('board-stat-done');
+
+  if (totalEl) totalEl.textContent = totalCount;
+  if (todoEl) todoEl.textContent = todoCount;
+  if (inProgressEl) inProgressEl.textContent = inProgressCount;
+  if (doneEl) doneEl.textContent = doneCount;
 
   if (viewType === 'board') {
     document.getElementById('tasks-kanban-view').classList.remove('hidden');
@@ -2659,6 +2860,22 @@ function navigateToDashboardCard(view, statusFilter) {
 function setupEventListeners() {
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
+  document.getElementById('btn-tab-ongoing')?.addEventListener('click', () => {
+    document.getElementById('btn-tab-ongoing').classList.add('active');
+    document.getElementById('btn-tab-upcoming').classList.remove('active');
+    if (typeof window.renderDashboardTasksWidget === 'function') {
+      window.renderDashboardTasksWidget('ongoing');
+    }
+  });
+
+  document.getElementById('btn-tab-upcoming')?.addEventListener('click', () => {
+    document.getElementById('btn-tab-upcoming').classList.add('active');
+    document.getElementById('btn-tab-ongoing').classList.remove('active');
+    if (typeof window.renderDashboardTasksWidget === 'function') {
+      window.renderDashboardTasksWidget('upcoming');
+    }
+  });
+
   document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
@@ -3629,8 +3846,8 @@ function initSocket() {
       const target = activeNav.getAttribute('data-target');
       if (target === 'view-dashboard') renderDashboard();
       else if (target === 'view-projects') renderProjects();
-      else if (target === 'view-tasks') renderTaskBoard();
-      else if (target === 'view-team') renderTeamSettings();
+      else if (target === 'view-tasks') renderKanbanBoard();
+      else if (target === 'view-team') renderTeam();
       else if (target === 'view-rfq') { renderRFQDashboard(); renderRFQTable(); renderRFQCharts(); }
       else if (target === 'view-pr') {
         await fetchPRs();

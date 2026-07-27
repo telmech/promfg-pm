@@ -573,8 +573,8 @@ module.exports = {
     if (!exists) {
       try {
         db.prepare(`
-          INSERT INTO projects (id, org_id, name, project_number, description, start_date, end_date, customer_name, members_json, timeline_json)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO projects (id, org_id, name, project_number, description, start_date, end_date, customer_name, created_at, members_json, timeline_json)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           defaultProjId,
           orgId,
@@ -584,6 +584,7 @@ module.exports = {
           new Date().toISOString().split('T')[0],
           '2035-12-31',
           'Internal',
+          new Date().toISOString(),
           JSON.stringify([]),
           JSON.stringify(DEFAULT_TIMELINE_STAGES)
         );
