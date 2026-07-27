@@ -752,23 +752,20 @@ app.put('/api/tasks/:id', authenticateToken, requireProjectAccess, (req, res) =>
   if (!currentTask) return res.status(404).json({ error: 'Task not found.' });
 
   const { projectId, title, description, assigneeId, priority, status, dueDate, startDate, allocatedOperator, operatorRole, mappedDuration } = req.body;
-  const role = req.user.role;
+  const isCreator = currentTask.createdBy === req.user.id;
+  const isAssignee = currentTask.assigneeId === req.user.id;
 
-  if (role !== 'admin' && role !== 'owner' && role !== 'project_manager') {
-    const isCreator = currentTask.createdBy === req.user.id;
-    const isAssignee = currentTask.assigneeId === req.user.id;
+  // 1. If not the creator and not the assignee, reject completely
+  if (!isCreator && !isAssignee) {
+    return res.status(403).json({ error: 'Access denied: You do not have permission to modify this task.' });
+  }
 
-    if (!isCreator && !isAssignee) {
-      return res.status(403).json({ error: 'Access denied: You do not have permissions for this task.' });
-    }
-
-    // Assignee who is NOT creator can only update status
-    if (!isCreator && isAssignee) {
-      if (projectId !== undefined || title !== undefined || description !== undefined || 
-          assigneeId !== undefined || priority !== undefined || dueDate !== undefined ||
-          startDate !== undefined || allocatedOperator !== undefined || operatorRole !== undefined || mappedDuration !== undefined) {
-        return res.status(403).json({ error: 'Access denied: You can only edit details on tasks you created.' });
-      }
+  // 2. If the user is the assignee but NOT the creator, they can ONLY update status
+  if (isAssignee && !isCreator) {
+    if (projectId !== undefined || title !== undefined || description !== undefined || 
+        assigneeId !== undefined || priority !== undefined || dueDate !== undefined ||
+        startDate !== undefined || allocatedOperator !== undefined || operatorRole !== undefined || mappedDuration !== undefined) {
+      return res.status(403).json({ error: 'Access denied: Only the task creator can edit its details.' });
     }
   }
 
@@ -778,8 +775,8 @@ app.put('/api/tasks/:id', authenticateToken, requireProjectAccess, (req, res) =>
     
     if (status !== undefined) updates.status = status;
     
-    // Managers or Creators can update details
-    if (role === 'admin' || role === 'owner' || role === 'project_manager' || currentTask.createdBy === req.user.id) {
+    // Only the creator can update task details
+    if (isCreator) {
       if (projectId !== undefined) updates.projectId = projectId;
       if (title !== undefined) updates.title = title;
       if (description !== undefined) updates.description = description;
@@ -838,12 +835,10 @@ app.delete('/api/tasks/:id', authenticateToken, requireProjectAccess, (req, res)
   const currentTask = db.getTaskById(req.user.orgId, req.params.id);
   if (!currentTask) return res.status(404).json({ error: 'Task not found.' });
 
-  const role = req.user.role;
-  const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager' || role === 'department_head');
   const isCreator = currentTask.createdBy === req.user.id;
 
-  if (!isManager && !isCreator) {
-    return res.status(403).json({ error: 'Access denied: You can only delete tasks you created.' });
+  if (!isCreator) {
+    return res.status(403).json({ error: 'Access denied: Only the creator of the task can delete it.' });
   }
 
   try {
