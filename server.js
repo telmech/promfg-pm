@@ -585,8 +585,16 @@ app.get('/api/projects', authenticateToken, requireProjectAccess, (req, res) => 
   if (role === 'admin' || role === 'owner' || role === 'project_manager') {
     return res.json(allProjects);
   }
-  const memberProjects = allProjects.filter(p => p.members && p.members.includes(req.user.id));
-  res.json(memberProjects);
+
+  // Regular members can view projects where no specific members are restricted (members is empty/undefined),
+  // projects where they are explicitly included in the members array, or default organization projects.
+  const accessibleProjects = allProjects.filter(p => 
+    !p.members || 
+    p.members.length === 0 || 
+    p.members.includes(req.user.id) || 
+    p.id.startsWith('plant_gen_project_')
+  );
+  res.json(accessibleProjects);
 });
 
 app.post('/api/projects', authenticateToken, requireProjectAccess, requireAdminPMOrSuperAdmin, (req, res) => {
@@ -691,9 +699,17 @@ app.get('/api/tasks', authenticateToken, requireProjectAccess, (req, res) => {
     return res.json(allTasks);
   }
 
-  // Members should ONLY see their own tasks (assigned to them or created by them)
+  // Get accessible projects for this member
+  const allProjects = db.getProjects(req.user.orgId);
+  const accessibleProjectIds = new Set(
+    allProjects
+      .filter(p => !p.members || p.members.length === 0 || p.members.includes(req.user.id) || p.id.startsWith('plant_gen_project_'))
+      .map(p => p.id)
+  );
+
+  // Members can see tasks in accessible projects, or tasks assigned to/created by them
   const filteredTasks = allTasks.filter(t => 
-    t.assigneeId === req.user.id || t.createdBy === req.user.id
+    accessibleProjectIds.has(t.projectId) || t.assigneeId === req.user.id || t.createdBy === req.user.id
   );
   
   return res.json(filteredTasks);
