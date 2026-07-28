@@ -581,20 +581,7 @@ app.post('/api/settings/logo', authenticateToken, requireSuperAdmin, upload.sing
 // 5. Project Management APIs
 app.get('/api/projects', authenticateToken, requireProjectAccess, (req, res) => {
   const allProjects = db.getProjects(req.user.orgId);
-  const role = req.user.role;
-  if (role === 'admin' || role === 'owner' || role === 'project_manager') {
-    return res.json(allProjects);
-  }
-
-  // Regular members can view projects where no specific members are restricted (members is empty/undefined),
-  // projects where they are explicitly included in the members array, or default organization projects.
-  const accessibleProjects = allProjects.filter(p => 
-    !p.members || 
-    p.members.length === 0 || 
-    p.members.includes(req.user.id) || 
-    p.id.startsWith('plant_gen_project_')
-  );
-  res.json(accessibleProjects);
+  res.json(allProjects);
 });
 
 app.post('/api/projects', authenticateToken, requireProjectAccess, requireAdminPMOrSuperAdmin, (req, res) => {
