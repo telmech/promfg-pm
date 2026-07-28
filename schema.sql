@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS projects (
     id TEXT PRIMARY KEY,
     org_id TEXT NOT NULL,
     name TEXT NOT NULL,
+    project_number TEXT,
     description TEXT,
     start_date TEXT,
     end_date TEXT,
@@ -181,4 +182,21 @@ CREATE TABLE IF NOT EXISTS pending_signups (
     otp TEXT NOT NULL,
     org_id TEXT NOT NULL,
     expires_at INTEGER NOT NULL
+);
+
+-- 13. Suppliers Table
+CREATE TABLE IF NOT EXISTS suppliers (
+    id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    contact_person TEXT,
+    phone TEXT,
+    email TEXT,
+    category TEXT NOT NULL DEFAULT 'General',
+    gst_number TEXT,
+    payment_terms TEXT,
+    lead_time TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(org_id) REFERENCES organizations(id)
 );

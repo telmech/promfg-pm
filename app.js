@@ -780,7 +780,13 @@ function renderDashboard() {
     filteredList.forEach(task => {
       const projName = state.projects.find(p => p.id === task.projectId)?.name || 'Unknown Project';
       const isOverdue = task.dueDate && task.dueDate < nowStr;
-      const assigneeName = state.users.find(u => u.id === task.assigneeId)?.name || 'Unassigned';
+      
+      const assigneeUser = state.users.find(u => u.id === task.assigneeId);
+      const assigneeName = assigneeUser ? assigneeUser.name : 'Unassigned';
+
+      const creatorId = task.createdBy || task.assignedBy;
+      const creatorUser = state.users.find(u => u.id === creatorId);
+      const assignedByName = creatorUser ? creatorUser.name : 'System';
 
       const item = document.createElement('div');
       item.className = 'dash-task-item';
@@ -789,11 +795,12 @@ function renderDashboard() {
           <h4 class="dash-task-title">${escapeHTML(task.title)}</h4>
           <span class="priority-pill pill-${task.priority}">${task.priority}</span>
         </div>
-        <div class="dash-task-meta">
-          <div>
+        <div class="dash-task-meta" style="flex-wrap: wrap; gap: 6px 12px; margin-top: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <span class="dash-task-proj">${escapeHTML(projName)}</span>
-            <span style="color:#64748b; margin:0 4px;">•</span>
-            <span class="dash-task-owner">${escapeHTML(assigneeName)}</span>
+            <span style="color:#64748b;">•</span>
+            <span class="dash-task-owner" title="Assigned To: ${escapeHTML(assigneeName)}">👤 ${escapeHTML(assigneeName)}</span>
+            <span style="font-size: 0.72rem; color: #a5b4fc; background: rgba(99, 102, 241, 0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.25);" title="Assigned By: ${escapeHTML(assignedByName)}">✍️ By: ${escapeHTML(assignedByName)}</span>
           </div>
           <span class="dash-task-due ${isOverdue ? 'overdue' : ''}">
             📅 ${task.dueDate || 'No Date'}
@@ -1676,9 +1683,10 @@ function renderTeam() {
       <td><span class="status-pill status-${user.status === 'active' ? 'done' : 'todo'}">${user.status}</span></td>
       <td>${new Date(user.createdAt).toLocaleDateString()}</td>
       <td style="display:flex; flex-wrap:wrap; gap:4px;">
-        <button class="btn btn-secondary btn-edit-user" data-id="${user.id}" ${canManageUser ? '' : 'disabled'}>Edit</button>
-        ${(canManageUser && user.status !== 'active') ? `<button class="btn btn-primary btn-approve-user" data-id="${user.id}">Approve</button>` : ''}
-        ${(canManageUser && user.status === 'active') ? `<button class="btn btn-danger btn-deny-user" data-id="${user.id}">Deny</button>` : ''}
+        <button class="btn btn-secondary btn-sm btn-edit-user" data-id="${user.id}" ${canManageUser ? '' : 'disabled'}>Edit</button>
+        ${(canManageUser && user.status !== 'active') ? `<button class="btn btn-primary btn-sm btn-approve-user" data-id="${user.id}">Approve</button>` : ''}
+        ${(canManageUser && user.status === 'active') ? `<button class="btn btn-secondary btn-sm btn-deny-user" data-id="${user.id}">Deactivate</button>` : ''}
+        ${(canManageUser && !isSelf) ? `<button class="btn btn-danger btn-sm btn-delete-user" data-id="${user.id}">Delete</button>` : ''}
       </td>
     `;
 
@@ -1690,6 +1698,9 @@ function renderTeam() {
       
       const denyBtn = tr.querySelector('.btn-deny-user');
       if (denyBtn) denyBtn.addEventListener('click', () => denyUser(user.id));
+
+      const deleteBtn = tr.querySelector('.btn-delete-user');
+      if (deleteBtn) deleteBtn.addEventListener('click', () => deleteUser(user.id, user.name));
     }
     
     tbody.appendChild(tr);
@@ -1759,6 +1770,42 @@ async function toggleUserStatus(id, currentStatus) {
     renderTeam();
   } catch (err) {
     alert(err.message);
+  }
+}
+
+async function approveUser(id) {
+  try {
+    await apiCall(`/api/users/${id}`, 'PUT', { status: 'active' });
+    showToast('Member approved successfully!', 'success');
+    await fetchUsers();
+    renderTeam();
+  } catch (err) {
+    alert(err.message || 'Failed to approve member.');
+  }
+}
+
+async function denyUser(id) {
+  if (!confirm('Are you sure you want to deactivate this team member?')) return;
+  try {
+    await apiCall(`/api/users/${id}`, 'PUT', { status: 'inactive' });
+    showToast('Member deactivated.', 'info');
+    await fetchUsers();
+    renderTeam();
+  } catch (err) {
+    alert(err.message || 'Failed to deactivate member.');
+  }
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`Are you sure you want to permanently delete team member "${name}"? This action cannot be undone.`)) return;
+  try {
+    await apiCall(`/api/users/${id}`, 'DELETE');
+    state.users = state.users.filter(u => u.id !== id);
+    showToast(`Team member "${name}" deleted.`, 'success');
+    await fetchUsers();
+    renderTeam();
+  } catch (err) {
+    alert(err.message || 'Failed to delete user.');
   }
 }
 
@@ -2172,6 +2219,12 @@ async function openTaskDetailsModal(taskId) {
     if (u) assigneeName = u.name;
   }
   document.getElementById('detail-task-assignee').textContent = assigneeName;
+
+  const creatorId = task.createdBy || task.assignedBy;
+  const creatorUser = state.users.find(u => u.id === creatorId);
+  const assignedByName = creatorUser ? creatorUser.name : 'System';
+  const createdByEl = document.getElementById('detail-task-createdby');
+  if (createdByEl) createdByEl.textContent = assignedByName;
 
   const priorityPill = document.getElementById('detail-task-priority');
   priorityPill.textContent = task.priority;
@@ -3192,6 +3245,7 @@ function setupEventListeners() {
         await apiCall(`/api/tasks/${taskId}`, 'PUT', body);
       } else {
         await apiCall('/api/tasks', 'POST', body);
+        playNotificationSound('task');
       }
       
       document.getElementById('modal-task-form').classList.remove('active');
@@ -3802,13 +3856,13 @@ function initSocket() {
       appendSingleChatMessage(msgObj);
       scrollChatToBottom();
       if (msgObj.userId !== state.currentUser?.id) {
-        playNotificationSound();
+        playNotificationSound('chat');
       }
     } else {
       // Show notification toast if the message is from another teammate
       if (msgObj.userId !== state.currentUser?.id) {
         showToast(`💬 New ${isGroupMsg ? 'Group' : 'Private'} message from ${msgObj.userName}: "${msgObj.message.substring(0, 25)}..."`, 'success');
-        playNotificationSound();
+        playNotificationSound('chat');
         
         // Highlight the unread source inside teammates list if currently viewing chat tab
         if (state.currentView === 'chat') {
@@ -3831,6 +3885,8 @@ function initSocket() {
 
   socket.on('data_updated', async () => {
     console.log('Real-time update received');
+    const prevTaskCount = state.tasks.length;
+
     // Silently fetch fresh data
     await Promise.all([
       fetchProjects(),
@@ -3839,6 +3895,10 @@ function initSocket() {
       fetchDepartments(),
       fetchSettings()
     ]);
+    
+    if (state.tasks.length > prevTaskCount) {
+      playNotificationSound('task');
+    }
     
     // Refresh the currently active view
     const activeNav = document.querySelector('.nav-link.active');
@@ -6641,37 +6701,81 @@ function setupChatBindings() {
 }
 
 // ==================== AUDIO NOTIFICATION UTILITY ====================
-function playNotificationSound() {
+let audioCtxSingleton = null;
+
+function getAudioContext() {
+  if (!audioCtxSingleton) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      audioCtxSingleton = new AudioContextClass();
+    }
+  }
+  if (audioCtxSingleton && audioCtxSingleton.state === 'suspended') {
+    audioCtxSingleton.resume().catch(() => {});
+  }
+  return audioCtxSingleton;
+}
+
+// Unlock audio context on any first user interaction (click, keydown, touchstart)
+if (typeof window !== 'undefined') {
+  ['click', 'keydown', 'touchstart'].forEach(eventType => {
+    window.addEventListener(eventType, () => {
+      getAudioContext();
+    }, { once: true });
+  });
+}
+
+function playNotificationSound(type = 'default') {
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
-    // Sound ping 1
-    playTone(ctx, 830, 0.08, 0.05);
+    const playSound = () => doPlaySound(ctx, type);
 
-    // Sound ping 2 slightly delayed
-    setTimeout(() => {
-      playTone(ctx, 980, 0.12, 0.05);
-    }, 80);
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(playSound).catch(() => {});
+    } else {
+      playSound();
+    }
   } catch (e) {
     console.warn('Audio play failed:', e);
   }
 }
 
+function doPlaySound(ctx, type) {
+  if (type === 'task') {
+    // Upbeat 3-tone chime for task added / created
+    playTone(ctx, 523.25, 0.08, 0.06); // C5
+    setTimeout(() => playTone(ctx, 659.25, 0.08, 0.06), 70); // E5
+    setTimeout(() => playTone(ctx, 783.99, 0.14, 0.06), 140); // G5
+  } else if (type === 'chat') {
+    // Pleasant double-ping for chat
+    playTone(ctx, 880, 0.08, 0.07); // A5
+    setTimeout(() => playTone(ctx, 1046.50, 0.12, 0.07), 80); // C6
+  } else {
+    // General notification sound
+    playTone(ctx, 830, 0.08, 0.05);
+    setTimeout(() => playTone(ctx, 980, 0.12, 0.05), 80);
+  }
+}
+
 function playTone(ctx, freq, duration, volume) {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-  
-  gain.gain.setValueAtTime(volume, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-  
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  
-  osc.start();
-  osc.stop(ctx.currentTime + duration);
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (err) {
+    console.warn('Tone play error:', err);
+  }
 }
