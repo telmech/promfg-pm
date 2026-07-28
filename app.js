@@ -1495,11 +1495,14 @@ function renderKanbanCards(filteredTasks) {
     card.draggable = true;
     card.dataset.id = task.id;
     
-    // Regular members can edit tasks they created or are assigned to
     const isCreator = task.createdBy === state.currentUser.id;
     const isAssignee = task.assigneeId === state.currentUser.id;
-    const isManager = (role === 'admin' || role === 'project_manager');
+    const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager');
     const canEdit = isManager || isCreator || isAssignee;
+    const canDelete = isManager || isCreator;
+
+    const creatorUser = state.users.find(u => u.id === (task.createdBy || task.assignedBy));
+    const assignedByName = creatorUser ? creatorUser.name : 'System';
 
     const pCode = proj && proj.projectNumber ? `<span style="background:var(--primary-color); color:#fff; font-size:0.6rem; font-weight:700; padding:1px 4px; border-radius:3px; margin-right:4px;">#${escapeHTML(proj.projectNumber)}</span>` : '';
     card.innerHTML = `
@@ -1508,8 +1511,9 @@ function renderKanbanCards(filteredTasks) {
       <span class="priority-pill pill-${task.priority}">${task.priority}</span>
       
       <div class="kanban-card-meta">
-        <div class="kanban-card-assignee" title="Assignee: ${escapeHTML(assigneeName)}">
-          <div class="initials">${assigneeInitials}</div>
+        <div class="kanban-card-assignee-full" style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:600; color:var(--text-primary);" title="Assigned To: ${escapeHTML(assigneeName)} • Assigned By: ${escapeHTML(assignedByName)}">
+          <div class="initials" style="width:22px; height:22px; font-size:0.62rem; border-radius:50%; background:var(--primary-color); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">${assigneeInitials}</div>
+          <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;">${escapeHTML(assigneeName)}</span>
         </div>
         <div class="kanban-card-date ${isOverdue ? 'overdue' : ''}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
@@ -1517,13 +1521,18 @@ function renderKanbanCards(filteredTasks) {
         </div>
       </div>
 
-      <button class="btn-icon kanban-card-edit-btn ${canEdit ? '' : 'hidden'}" title="Edit Task" data-id="${task.id}">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-      </button>
+      <div class="kanban-card-actions" style="position:absolute; top:8px; right:8px; display:flex; gap:2px;">
+        <button class="btn-icon kanban-card-edit-btn ${canEdit ? '' : 'hidden'}" title="Edit Task" data-id="${task.id}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </button>
+        <button class="btn-icon kanban-card-delete-btn text-danger ${canDelete ? '' : 'hidden'}" title="Delete Task" data-id="${task.id}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
     `;
 
     card.addEventListener('click', (e) => {
-      if (e.target.closest('.kanban-card-edit-btn')) return;
+      if (e.target.closest('.kanban-card-actions')) return;
       openTaskDetailsModal(task.id);
     });
 
@@ -1531,6 +1540,20 @@ function renderKanbanCards(filteredTasks) {
       card.querySelector('.kanban-card-edit-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         openTaskFormModal(task.id);
+      });
+    }
+
+    if (canDelete) {
+      card.querySelector('.kanban-card-delete-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!confirm(`Are you sure you want to delete task "${task.title}"?`)) return;
+        try {
+          await apiCall(`/api/tasks/${task.id}`, 'DELETE');
+          await fetchTasks();
+          renderKanbanBoard();
+        } catch (err) {
+          alert('Failed to delete task: ' + err.message);
+        }
       });
     }
 
@@ -1567,8 +1590,9 @@ function renderListTasks(filteredTasks) {
 
     const isCreator = task.createdBy === state.currentUser.id;
     const isAssignee = task.assigneeId === state.currentUser.id;
-    const isManager = (role === 'admin' || role === 'project_manager');
+    const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager');
     const canEdit = isManager || isCreator || isAssignee;
+    const canDelete = isManager || isCreator;
 
     const tr = document.createElement('tr');
     const pCode = proj && proj.projectNumber ? `<span style="display:inline-block; background:#e2e8f0; color:#334155; font-size:0.68rem; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px;">#${escapeHTML(proj.projectNumber)}</span>` : '';
@@ -1582,6 +1606,7 @@ function renderListTasks(filteredTasks) {
       <td>
         <button class="btn btn-secondary btn-sm btn-open-detail" data-id="${task.id}">Open</button>
         <button class="btn btn-secondary btn-sm btn-edit-task ${canEdit ? '' : 'hidden'}" data-id="${task.id}">Edit</button>
+        <button class="btn btn-danger btn-sm btn-delete-task-row ${canDelete ? '' : 'hidden'}" data-id="${task.id}">Delete</button>
       </td>
     `;
 
@@ -1589,6 +1614,22 @@ function renderListTasks(filteredTasks) {
     
     if (canEdit) {
       tr.querySelector('.btn-edit-task').addEventListener('click', () => openTaskFormModal(task.id));
+    }
+
+    if (canDelete) {
+      const delBtn = tr.querySelector('.btn-delete-task-row');
+      if (delBtn) {
+        delBtn.addEventListener('click', async () => {
+          if (!confirm(`Are you sure you want to delete task "${task.title}"?`)) return;
+          try {
+            await apiCall(`/api/tasks/${task.id}`, 'DELETE');
+            await fetchTasks();
+            renderKanbanBoard();
+          } catch (err) {
+            alert('Failed to delete task: ' + err.message);
+          }
+        });
+      }
     }
 
     tbody.appendChild(tr);
@@ -1890,6 +1931,8 @@ function renderReports() {
 function renderNotifications() {
   const notifBadge = document.getElementById('notification-badge');
   const notifList = document.getElementById('notification-list');
+  if (!notifList || !notifBadge) return;
+
   const unread = state.notifications.filter(n => !n.read);
   
   if (unread.length > 0) {
@@ -1901,21 +1944,29 @@ function renderNotifications() {
 
   notifList.innerHTML = '';
   if (state.notifications.length === 0) {
-    notifList.innerHTML = '<div class="no-notifications">No new notifications</div>';
+    notifList.innerHTML = '<div class="no-notifications">No notifications</div>';
     return;
   }
 
   state.notifications.forEach(n => {
     const div = document.createElement('div');
     div.className = `notification-item ${n.read ? '' : 'unread'}`;
+    const itemText = n.text || n.message || 'Notification received';
     div.innerHTML = `
-      <div>${escapeHTML(n.text)}</div>
+      <div>${escapeHTML(itemText)}</div>
       <div class="notif-time">${formatTimeAgo(n.createdAt)}</div>
     `;
     div.addEventListener('click', async () => {
       if (!n.read) {
-        await apiCall(`/api/notifications/${n.id}/read`, 'PUT');
-        fetchNotifications().then(renderNotifications).catch(console.error);
+        n.read = true;
+        renderNotifications();
+        try {
+          await apiCall(`/api/notifications/${n.id}/read`, 'PUT');
+          await fetchNotifications();
+          renderNotifications();
+        } catch (err) {
+          console.error(err);
+        }
       }
     });
     notifList.appendChild(div);
@@ -2250,11 +2301,20 @@ async function openTaskDetailsModal(taskId) {
     }
   }
 
-  document.getElementById('attachment-file-name').textContent = 'No file chosen';
-  document.getElementById('attachment-file-input').value = '';
+  // Show/Hide Delete Task button based on permissions (Creator or Admin/PM)
+  const role = state.currentUser.role;
+  const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager');
+  const isCreator = task.createdBy === state.currentUser.id;
+  const canDeleteTask = isManager || isCreator;
 
-  renderTaskComments(taskId);
-  renderTaskAttachments(task);
+  const btnDeleteTaskWrapper = document.getElementById('btn-delete-task-wrapper');
+  if (btnDeleteTaskWrapper) {
+    if (canDeleteTask) {
+      btnDeleteTaskWrapper.classList.remove('hidden');
+    } else {
+      btnDeleteTaskWrapper.classList.add('hidden');
+    }
+  }
 
   modal.classList.add('active');
 }
@@ -3082,15 +3142,20 @@ function setupEventListeners() {
     }
   });
 
-  document.getElementById('btn-clear-notifications').addEventListener('click', async () => {
-    try {
-      await apiCall('/api/notifications/read-all', 'POST');
-      await fetchNotifications();
-      renderNotifications();
-    } catch (err) {
-      console.error(err);
-    }
-  });
+  const btnClearNotifs = document.getElementById('btn-clear-notifications');
+  if (btnClearNotifs) {
+    btnClearNotifs.addEventListener('click', async () => {
+      try {
+        state.notifications = [];
+        renderNotifications();
+        await apiCall('/api/notifications/read-all', 'POST');
+        state.notifications = [];
+        renderNotifications();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
 
   document.getElementById('project-search-input').addEventListener('input', renderProjects);
 
@@ -6702,6 +6767,10 @@ function setupChatBindings() {
 
 // ==================== AUDIO NOTIFICATION UTILITY ====================
 let audioCtxSingleton = null;
+let chimeAudioElement = null;
+
+// Lightweight 880Hz Base64 WAV chime data URI fallback
+const BASE64_CHIME_WAV = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFb4N5gnd2dXFwcXN0e4CHi5OWmJmalpqboKOlqKmqra6vsLGztLa3uLq7vL2+v8DBwsPExcjJysvMzc7P0NHS09TV1tfY2drb3N3e3+/g4eLj5OXm5+jp6usr7O7v8PHy8/T19vf4+fr7/P3+/w==';
 
 function getAudioContext() {
   if (!audioCtxSingleton) {
@@ -6716,66 +6785,90 @@ function getAudioContext() {
   return audioCtxSingleton;
 }
 
-// Unlock audio context on any first user interaction (click, keydown, touchstart)
+// Unlock audio context on any first user interaction
+function unlockAudioEngine() {
+  try {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  } catch (e) {}
+}
+
 if (typeof window !== 'undefined') {
-  ['click', 'keydown', 'touchstart'].forEach(eventType => {
-    window.addEventListener(eventType, () => {
-      getAudioContext();
-    }, { once: true });
+  ['click', 'mousedown', 'keydown', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, unlockAudioEngine, { passive: true });
   });
 }
 
 function playNotificationSound(type = 'default') {
   try {
     const ctx = getAudioContext();
-    if (!ctx) return;
-
-    const playSound = () => doPlaySound(ctx, type);
-
-    if (ctx.state === 'suspended') {
-      ctx.resume().then(playSound).catch(() => {});
+    if (ctx) {
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(() => doPlaySynthSound(ctx, type)).catch(() => doPlayFallbackSound());
+      } else {
+        doPlaySynthSound(ctx, type);
+      }
     } else {
-      playSound();
+      doPlayFallbackSound();
     }
   } catch (e) {
-    console.warn('Audio play failed:', e);
+    doPlayFallbackSound();
   }
 }
 
-function doPlaySound(ctx, type) {
-  if (type === 'task') {
-    // Upbeat 3-tone chime for task added / created
-    playTone(ctx, 523.25, 0.08, 0.06); // C5
-    setTimeout(() => playTone(ctx, 659.25, 0.08, 0.06), 70); // E5
-    setTimeout(() => playTone(ctx, 783.99, 0.14, 0.06), 140); // G5
-  } else if (type === 'chat') {
-    // Pleasant double-ping for chat
-    playTone(ctx, 880, 0.08, 0.07); // A5
-    setTimeout(() => playTone(ctx, 1046.50, 0.12, 0.07), 80); // C6
-  } else {
-    // General notification sound
-    playTone(ctx, 830, 0.08, 0.05);
-    setTimeout(() => playTone(ctx, 980, 0.12, 0.05), 80);
-  }
-}
-
-function playTone(ctx, freq, duration, volume) {
+function doPlaySynthSound(ctx, type) {
   try {
+    const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    
-    gain.gain.setValueAtTime(volume, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
-  } catch (err) {
-    console.warn('Tone play error:', err);
+
+    if (type === 'task') {
+      // High-pitched upbeat double chime for tasks (D5 -> A5)
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(587.33, now);
+      osc.frequency.setValueAtTime(880.00, now + 0.1);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.28);
+    } else if (type === 'chat') {
+      // Pleasant double ping for chat (A5 -> D6)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880.00, now);
+      osc.frequency.setValueAtTime(1174.66, now + 0.08);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.24);
+    } else {
+      // Default notification ping (G5 -> C6)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(783.99, now);
+      osc.frequency.setValueAtTime(1046.50, now + 0.09);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.24);
+    }
+  } catch (e) {
+    doPlayFallbackSound();
   }
+}
+
+function doPlayFallbackSound() {
+  try {
+    if (!chimeAudioElement) {
+      chimeAudioElement = new Audio(BASE64_CHIME_WAV);
+    }
+    chimeAudioElement.currentTime = 0;
+    chimeAudioElement.play().catch(() => {});
+  } catch (e) {}
 }

@@ -758,6 +758,7 @@ module.exports = {
       userId: n.user_id,
       type: n.type,
       message: n.message,
+      text: n.message,
       read: n.read === 1,
       createdAt: n.created_at
     }));
@@ -787,6 +788,7 @@ module.exports = {
       userId: n.user_id,
       type: n.type,
       message: n.message,
+      text: n.message,
       read: false,
       createdAt: n.created_at
     };
@@ -801,6 +803,7 @@ module.exports = {
       userId: n.user_id,
       type: n.type,
       message: n.message,
+      text: n.message,
       read: true,
       createdAt: n.created_at
     } : null;
@@ -808,6 +811,11 @@ module.exports = {
 
   markAllNotificationsRead: (orgId, userId) => {
     db.prepare('UPDATE notifications SET read = 1 WHERE user_id = ? AND org_id = ?').run(userId, orgId);
+    return true;
+  },
+
+  clearNotificationsByUserId: (orgId, userId) => {
+    db.prepare('DELETE FROM notifications WHERE user_id = ? AND org_id = ?').run(userId, orgId);
     return true;
   },
 

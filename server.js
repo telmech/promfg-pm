@@ -754,20 +754,21 @@ app.put('/api/tasks/:id', authenticateToken, requireProjectAccess, (req, res) =>
   if (!currentTask) return res.status(404).json({ error: 'Task not found.' });
 
   const { projectId, title, description, assigneeId, priority, status, dueDate, startDate, allocatedOperator, operatorRole, mappedDuration } = req.body;
+  const isManager = req.user.role === 'admin' || req.user.role === 'owner' || req.user.role === 'project_manager';
   const isCreator = currentTask.createdBy === req.user.id;
   const isAssignee = currentTask.assigneeId === req.user.id;
 
-  // 1. If not the creator and not the assignee, reject completely
-  if (!isCreator && !isAssignee) {
+  // 1. If not manager, not creator, and not assignee, reject completely
+  if (!isManager && !isCreator && !isAssignee) {
     return res.status(403).json({ error: 'Access denied: You do not have permission to modify this task.' });
   }
 
-  // 2. If the user is the assignee but NOT the creator, they can ONLY update status
-  if (isAssignee && !isCreator) {
+  // 2. If the user is only the assignee (not manager and not creator), they can ONLY update status
+  if (!isManager && !isCreator && isAssignee) {
     if (projectId !== undefined || title !== undefined || description !== undefined || 
         assigneeId !== undefined || priority !== undefined || dueDate !== undefined ||
         startDate !== undefined || allocatedOperator !== undefined || operatorRole !== undefined || mappedDuration !== undefined) {
-      return res.status(403).json({ error: 'Access denied: Only the task creator can edit its details.' });
+      return res.status(403).json({ error: 'Access denied: Only the task creator or an Admin/PM can edit full task details.' });
     }
   }
 
@@ -777,8 +778,8 @@ app.put('/api/tasks/:id', authenticateToken, requireProjectAccess, (req, res) =>
     
     if (status !== undefined) updates.status = status;
     
-    // Only the creator can update task details
-    if (isCreator) {
+    // Creator or Manager can update task details
+    if (isManager || isCreator) {
       if (projectId !== undefined) updates.projectId = projectId;
       if (title !== undefined) updates.title = title;
       if (description !== undefined) updates.description = description;
@@ -812,7 +813,7 @@ app.put('/api/tasks/:id', authenticateToken, requireProjectAccess, (req, res) =>
     }
 
     if (status !== undefined && status !== currentTask.status && 
-        role !== 'admin' && role !== 'owner' && role !== 'project_manager') {
+        req.user.role !== 'admin' && req.user.role !== 'owner' && req.user.role !== 'project_manager') {
       
       const managers = db.getUsers(req.user.orgId).filter(u => 
         (u.role === 'admin' || u.role === 'owner' || u.role === 'project_manager') && 
@@ -837,10 +838,11 @@ app.delete('/api/tasks/:id', authenticateToken, requireProjectAccess, (req, res)
   const currentTask = db.getTaskById(req.user.orgId, req.params.id);
   if (!currentTask) return res.status(404).json({ error: 'Task not found.' });
 
+  const isManager = req.user.role === 'admin' || req.user.role === 'owner' || req.user.role === 'project_manager';
   const isCreator = currentTask.createdBy === req.user.id;
 
-  if (!isCreator) {
-    return res.status(403).json({ error: 'Access denied: Only the creator of the task can delete it.' });
+  if (!isManager && !isCreator) {
+    return res.status(403).json({ error: 'Access denied: Only the task creator or an Admin/PM can delete this task.' });
   }
 
   try {
@@ -1013,7 +1015,13 @@ app.put('/api/notifications/:id/read', authenticateToken, (req, res) => {
 
 app.post('/api/notifications/read-all', authenticateToken, (req, res) => {
   db.markAllNotificationsRead(req.user.orgId, req.user.id);
-  res.json({ message: 'All notifications marked as read.' });
+  db.clearNotificationsByUserId(req.user.orgId, req.user.id);
+  res.json({ message: 'All notifications cleared.' });
+});
+
+app.delete('/api/notifications/clear', authenticateToken, (req, res) => {
+  db.clearNotificationsByUserId(req.user.orgId, req.user.id);
+  res.json({ message: 'Notifications cleared.' });
 });
 
 
