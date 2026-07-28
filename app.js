@@ -1982,15 +1982,15 @@ async function openTaskFormModal(taskId = null) {
   form.reset();
   
   const role = state.currentUser.role;
-  const isManager = (role === 'admin' || role === 'project_manager');
+  const isManager = (role === 'admin' || role === 'owner' || role === 'project_manager' || role === 'superadmin' || role === 'department_head' || role === 'operations_head' || role === 'md');
 
-  // Filter projects by member assignments if not manager
+  // Populate projects select dropdown
   const projectSelect = document.getElementById('task-project');
   projectSelect.innerHTML = '<option value="">Select Project...</option>';
   
   const allowedProj = isManager 
     ? state.projects 
-    : state.projects.filter(p => p.members && p.members.includes(state.currentUser.id));
+    : state.projects.filter(p => !p.members || p.members.length === 0 || p.members.includes(state.currentUser.id) || p.id.startsWith('plant_gen_project_'));
   
   allowedProj.forEach(p => {
     const codeStr = p.projectNumber ? '[' + p.projectNumber + '] ' : '';
